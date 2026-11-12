@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "id": "kingkong_cardata",
+  "version": "1.0.0",
+  "tree": "kingkong_cardata@1.0.0",
+  "modules": [
+    "src/main.js",
+    "src/obd.js",
+    "src/trips.js",
+    "src/engine-groups.js",
+    "src/engine-groups-catalog.js",
+    "src/transmission.js",
+    "src/tabs.js",
+    "src/dpf.js",
+    "src/tasu-guard.js",
+    "src/online-host.js"
+  ],
+  "sdk": [
+    "oap-sdk/src/core/OnlineApp.js",
+    "oap-sdk/src/logging/logging",
+    "oap-sdk/src/someip/someipBuilders"
+  ]
+}

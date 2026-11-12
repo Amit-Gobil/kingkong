@@ -1,0 +1,20 @@
+# BMW SDK — never commit
+oap-sdk/
+reference/
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+.DS_Store
+/preview/
+.claude/
+/work/
+/captures/
+/backups/
+*.pem
+*.key
+
+# Build leftovers (keep committed app packages under apps/*/…@….tgz)
+dist/
+*.mgu
+/*.tgz

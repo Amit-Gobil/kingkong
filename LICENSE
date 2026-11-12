@@ -1,0 +1,35 @@
+MIT License
+
+Copyright (c) 2026 Kingkong Tuning / Amit-Gobil
+Copyright (c) 2026 cauliflowermossgrape (MIT-licensed Live Data / kit ports used in trips and engine groups)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---------------------------------------------------------------------------
+Third-party / adapted code
+---------------------------------------------------------------------------
+
+Parts of the live-data behaviour (ID8 host lifecycle, OBD/TASU polling,
+renderer screen wiring) were adapted from IterioDev Car Data
+(https://github.com/IterioDev/car-apps) at the direction of the repository
+owner for Kingkong Tuning. The visual design is Kingkong Tuning’s own
+(black + gold + logo) and is not a copy of Car Data’s look.
+
+MIT-licensed fragments originally from cauliflowermossgrape/idrive7-apps
+(trips, engine-group catalogs) remain under the MIT terms above; see NOTICE.md.
