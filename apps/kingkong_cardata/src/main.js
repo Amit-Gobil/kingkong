@@ -78,6 +78,7 @@ const { createGuard } = require('./tasu-guard.js');
 const { createHost } = require('./online-host.js');
 const { RingLog } = require('./logbuf.js');
 const ethMod = require('./ethanol.js');
+const { createAdjust, isLiveAdjustWrite } = require('./adjust.js');
 
 const LOG = '[kingkong_cardata]';
 
@@ -377,14 +378,20 @@ function connectTasu() {
         .catch((e) => { link.UDS = linkErr(e); setTimeout(connectTasu, RETRY_MS); });
 }
 
-/** A page's read through the TASU link (one request in flight, between the OBD requests): resolves the unit's answer from
- *  its service byte (62 ... / 59 ... / 7F ...) as bytes, or null (no link, no answer, refused by the guard) */
+/** A page's read/write through the TASU link (one request in flight, between the OBD requests): resolves the unit's
+ *  answer from its service byte (62 ... / 6F ... / 41 ... / 7F ...) as bytes, or null (no link, no answer, blocked) */
 function udsRead(target, bytes) {
     if (!tasu) return Promise.resolve(null);
     return new Promise((resolve) => {
         udsQueue.push({ target, uds: Array.from(bytes), resolve });
         if (!pending) setTimeout(obdTick, 0);
     });
+}
+// Adjust tab (maps / Max Cooling / flap): shares this TASU queue; created after udsRead exists
+let adjust = null;
+function ensureAdjust() {
+    if (!adjust) adjust = createAdjust({ uds: (t, b) => udsRead(t, b), log: (m) => log(m) });
+    return adjust;
 }
 
 function finishObd(answer) {
@@ -411,9 +418,13 @@ function finishObd(answer) {
     setTimeout(obdTick, OBD_GAP_MS);
 }
 
-// every TASU request passes the shared guard; Kingkong only reads (OBD 01, UDS 22), which it always lets
-// through, so it needs no speed / rpm feed - anything else would be refused here
-const guard = createGuard();
+// every TASU request passes the shared guard. Reads (OBD 01, UDS 22, …) always pass. Live Adjust's MHD /
+// flap 2F writes are allowed at any speed (same allow-list as Iterio liveadjust 1.1.1); anything else still
+// needs the car parked (and fails here because speed/rpm are not fed — intentional).
+const still = createGuard({ engineRunning: true, freshMs: 5000 });
+const guard = Object.assign({}, still, {
+    check: (sid, d) => (isLiveAdjustWrite(sid, d) ? { ok: true, why: '' } : still.check(sid, d)),
+});
 
 function obdTick() {
     if (!tasu || pending || Date.now() > activeUntil) return;
@@ -457,10 +468,11 @@ function onTasuResponse(ev) {
 const SOURCE = typeof __dirname === 'string' ? path.join(__dirname, '..') : `/var/opt/public/oap/oap_${process.getuid()}/source`;
 const RENDERER = path.join(SOURCE, 'renderer');
 const runtime = (f) => require(path.join(RENDERER, f));
-const PAGES = ['engine', 'fuel', 'trips', 'transmission', 'dpf', 'details', 'settings'];   // RHMI host states
-const TAB = { engine: 'Engine', fuel: 'Fuel', trips: 'Trips', transmission: 'Transmission', dpf: 'DPF', details: 'Details', settings: 'Settings' };
-// Kingkong tabs: Engine / Fuel / Trips / Transmission / Details / Settings
-const shownPages = () => ['engine', 'fuel', 'trips', 'transmission', 'details', 'settings'];
+const PAGES = ['engine', 'fuel', 'trips', 'transmission', 'dpf', 'adjust', 'details', 'settings'];   // RHMI host states
+const TAB = { engine: 'Engine', fuel: 'Fuel', trips: 'Trips', transmission: 'Transmission', dpf: 'DPF',
+    adjust: 'Adjust', details: 'Details', settings: 'Settings' };
+// Kingkong tabs: Engine / Fuel / Trips / Transmission / Adjust / Details / Settings
+const shownPages = () => ['engine', 'fuel', 'trips', 'transmission', 'adjust', 'details', 'settings'];
 let screens = null, tabsShown = '';
 function syncTabs() {          // bottom teleTabBar + shell (tabs hidden up top)
     const s = shownPages(), t = s.map((p) => TAB[p]).join(', ');
@@ -786,6 +798,7 @@ function render() {
     if (pg === 'trips') setAll(tabs.tripsView({ tc, now, period: tripPeriod, currency, flow: tripFlow(now), running: /^(running|starting)$/.test(engineRun() || ''), paused }));
     if (pg === 'transmission') { setAll(tabs.transView(Object.assign({}, trans, { live: cur(trans.live), paused }))); transPictures(); }
     if (pg === 'dpf') setAll(dpf.view(filt, now, paused));
+    if (pg === 'adjust') setAll(ensureAdjust().view(paused));
     syncTabs();
     if (pg === 'details') setAll(tabs.detailsView(cur(groupsRes), groupsAsked, GROUP_DIDS, linkRows(), paused));
     // Settings: the bar ends (the engine-speed one by the engine type until set by hand), the fuel price, the currency
@@ -808,6 +821,11 @@ function onChange(name, o) {
     const k = name.replace(/Max$/, '');
     if (k !== name && RANGES[k]) { custom[k] = snap(k, o.value); saveSettings(); render(); return; }   // a settings slider: by hand
     if (name === 'tripPeriod') { tripPeriod = o.sel; render(); return; }                                 // Trips: today / 7 / 30 days
+    if (name === 'mapSeg' || name === 'flapSeg' || name === 'coolSeg') {                                 // Adjust: map / flap / cooling
+        ensureAdjust().onChange(name, o);
+        render();
+        return;
+    }
     let from = name.replace(/Menu$/, '');
     if (from === name) from = name.replace(/Tabs$/, '');
     if (from === name || PAGES.indexOf(from) < 0) return;
@@ -856,6 +874,7 @@ function startScreens(rhmiApp, hosts) {
             if (trans.id && !trans.id.supported) trans.id = null;
         }
         if (name === 'dpf') filt.visit();                                           // its history read again
+        if (name === 'adjust') ensureAdjust().onShow();                             // MHD status reset + flap/rpm poll
         render();                                                                   // its values in its first frame
     });
     // the app came back from the background with its screen still up: the HMI shows the host state again
@@ -896,6 +915,7 @@ createHost({
         }, 5000);
         setInterval(tripTick, 500);                                                 // Trips, also with the screens closed
         setInterval(() => { readFuelRef(); readBoostTarget(); readEthanol(); readLpfp(); readTrans(); readDpf(); }, 1000);
+        setInterval(() => { if (onPage('adjust')) ensureAdjust().poll().then(() => render()); }, 2000);
         setInterval(readGroups, 2000);
         setInterval(() => { sampleSeries(); if (onPage('dpf')) filt.sample(Date.now()); }, 5000);
     },

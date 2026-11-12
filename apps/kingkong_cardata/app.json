@@ -1,15 +1,15 @@
 {
- "id": "kingkong_cardata",
- "version": "1.2.4",
- "title": "Kingkong",
- "description": "Kingkong Quiet Dials: Fuel etanol strip Etanol XX/-- %, MHD Active probes 5939/5938/550D/F452/593A + Settings debug, LPFP UDS fallback.",
- "mguHmi": [
-  "ID8"
- ],
- "needs": [
-  "renderer"
- ],
- "requires": {
-  "mgu-deploy": "0.7.5"
- }
+  "id": "kingkong_cardata",
+  "version": "1.2.5",
+  "title": "Kingkong",
+  "description": "Kingkong Quiet Dials 1.2.5: Adjust tab (maps 1–4, MHD Max Cooling, exhaust flap; Iterio Live Adjustments logic). Fuel etanol, Skicka-logg.",
+  "mguHmi": [
+    "ID8"
+  ],
+  "needs": [
+    "renderer"
+  ],
+  "requires": {
+    "mgu-deploy": "0.7.5"
+  }
 }
