@@ -1,25 +1,18 @@
 'use strict';
 /*
- * ethanol.js — etanol % for Kingkong on Amit’s G81 (S58) + Motive ReFlex + MHD+.
+ * ethanol.js — etanol % for Kingkong G81 + Motive ReFlex + MHD+.
  *
- * Evidence (Amit MHD Monitor log, 2026-09-26):
- *   CALID 00008A51145047 / PRGID 00005C64145007 / VIN WBS11GB04PFP58981
- *   Column "Ethanol Content (Active) (%)" ≈ 78, with ReFlex Aux columns present.
- *   MHD docs: Active = ethanol used in custom DME calc (≈ CAN unless tuner override).
- *
- * HU has no PT-CAN. MHD Active lives in DME RAM (Monitor reads it over the WiFi
- * adapter via proprietary memory requests). Closest standard UDS mirrors on BMW
- * MG1/B48–style PID tables (same family as S58 DME8):
- *   22 59 39  — "Ethanol content at the injection valve"  ≈ Active / fueling
- *              u16 × 0.00003052 (= /32768) → 0..1 fraction → ×100 = %
- *   22 59 38  — "Ethanol content - raw value from the sensor" ≈ CAN/ECA
- *              same scale
- * Stock DME8FF_R also lists 550D (PROZENT_ALK_KRST, ×0.39215686) — often empty
- * on petrol G81 without factory flex. OBD 01 52 / UDS F4 52 kept as aftermarket
- * mirrors. Prefer 5939 → 5938 → OBD52 → F452 → 550D.
+ * Amit MHD Monitor log: "Ethanol Content (Active) (%)" ≈ 78
+ * (CALID 00008A51145047 / PRGID 00005C64145007). Active is MHD custom RAM;
+ * Monitor reads it over WiFi. HU probes DME UDS/OBD mirrors:
+ *   5939 / 5938 — B48 MG1 ethanol DIDs (may NRC on S58)
+ *   593A       — DME8FF oil+alcohol mass (debug only, not %)
+ *   550D       — stock PROZENT_ALK_KRST
+ *   OBD 01 52 / UDS F4 52 — aftermarket mirrors
+ * UI always shows "Etanol XX %" or "Etanol -- %" (short label).
  */
 const CAN_IDS = [0x0EC, 0x0ED, 0x334, 0x4CB];
-const FRAC = 1 / 32768; // BMW table multiply 0.00003052
+const FRAC = 1 / 32768;
 
 const CAN = {
     ids: CAN_IDS, id: 0x0EC, bitrate: 500000, rateHz: 4, format: 'ECA/ReFlex/MHD-FlexFuel',
@@ -39,12 +32,8 @@ function createEthanol() {
     return {
         pct: null, src: null, at: 0, tempC: null,
         debug: {
-            d5939: 'not asked yet',
-            d5938: 'not asked yet',
-            obd52: 'not asked yet',
-            f452: 'not asked yet',
-            d550D: 'not asked yet',
-            note: 'MHD Active≈5939; sensor/CAN≈5938 (u16/32768)',
+            d5939: 'not asked', d5938: 'not asked', d593A: 'not asked',
+            obd52: 'not asked', f452: 'not asked', d550D: 'not asked',
         },
     };
 }
@@ -66,35 +55,39 @@ function decodeByte(raw) {
     return +(raw * 100 / 255).toFixed(0);
 }
 
-/** u16 BMW ethanol fraction → % ; also accept single-byte direct %. */
 function decodePayload(payload) {
     if (!payload || !payload.length) return null;
     if (payload.length === 1) return decodeByte(payload[0]);
     const u16 = ((payload[0] & 255) << 8) | (payload[1] & 255);
-    // Primary: fraction 0..1 → %
     let pct = u16 * FRAC * 100;
     if (pct >= 0 && pct <= 100.5) return +pct.toFixed(1);
-    // Fallback: already stored as centi-% or direct 0..100 in low byte
     if (payload[0] === 0 && payload[1] <= 100) return payload[1];
-    if (u16 <= 10000 && u16 >= 0) {
+    if (u16 <= 10000) {
         const c = u16 / 100;
         if (c <= 100) return +c.toFixed(1);
     }
+    // last resort: low byte as direct %
+    if (payload[payload.length - 1] <= 100) return payload[payload.length - 1];
     return null;
+}
+
+function hexOf(uds, n) {
+    n = n || 8;
+    return (uds || []).slice(0, Math.min((uds && uds.length) || 0, n)).map((b) => b.toString(16).padStart(2, '0')).join(' ');
 }
 
 function udsPayload(uds) {
     if (!uds || !uds.length) return { err: 'no reply' };
-    if (uds[0] === 0x7F) return { err: 'NRC ' + (uds.length > 2 ? uds[2].toString(16) : '?') };
-    if (uds[0] === 0x62 && uds.length >= 4) return { data: uds.slice(3), hex: uds.slice(0, Math.min(uds.length, 7)).map((b) => b.toString(16).padStart(2, '0')).join(' ') };
-    return { data: uds, hex: uds.slice(0, Math.min(uds.length, 5)).map((b) => b.toString(16).padStart(2, '0')).join(' ') };
+    if (uds[0] === 0x7F) return { err: 'NRC ' + (uds.length > 2 ? uds[2].toString(16) : '?'), hex: hexOf(uds) };
+    if (uds[0] === 0x62 && uds.length >= 4) return { data: uds.slice(3), hex: hexOf(uds) };
+    return { data: uds, hex: hexOf(uds) };
 }
 
 function fromUds5939(uds, state, now) {
     const p = udsPayload(uds);
     if (p.err) { state.debug.d5939 = p.err; return false; }
     const pct = decodePayload(p.data);
-    state.debug.d5939 = (p.hex || '') + ' → ' + (pct == null ? 'bad' : pct + '%');
+    state.debug.d5939 = p.hex + (pct == null ? ' · nodecode' : ' → ' + pct + '%');
     return pct == null ? false : setOk(state, pct, 'uds5939', now);
 }
 
@@ -102,8 +95,16 @@ function fromUds5938(uds, state, now) {
     const p = udsPayload(uds);
     if (p.err) { state.debug.d5938 = p.err; return false; }
     const pct = decodePayload(p.data);
-    state.debug.d5938 = (p.hex || '') + ' → ' + (pct == null ? 'bad' : pct + '%');
+    state.debug.d5938 = p.hex + (pct == null ? ' · nodecode' : ' → ' + pct + '%');
     return pct == null ? false : setOk(state, pct, 'uds5938', now);
+}
+
+/** 593A = oil+alcohol mass (g) — debug only, never drives the % gauge. */
+function fromUds593A(uds, state) {
+    const p = udsPayload(uds);
+    if (p.err) { state.debug.d593A = p.err; return false; }
+    state.debug.d593A = p.hex + ' (oil mass, not %)';
+    return false;
 }
 
 function fromObd52Byte(rawA, state, now) {
@@ -148,57 +149,66 @@ function value(state) {
     return state.pct;
 }
 
-function label(state) {
-    if (!state || !state.src) return 'Etanol';
-    if (state.src === 'uds5939') return 'Etanol · MHD Active (5939)';
-    if (state.src === 'uds5938') return 'Etanol · MHD sensor (5938)';
-    if (state.src === 'obd52') return 'Etanol · OBD 52 / Reflex';
-    if (state.src === 'udsF452') return 'Etanol · UDS F452 / Reflex';
-    if (state.src === 'uds550D') return 'Etanol · UDS 550D';
-    if (state.src === 'can-0xEC') return 'Etanol · CAN 0xEC';
-    return 'Etanol';
+/** Short UI label — never a long source string (that broke Fuel miniTile). */
+function label() { return 'Etanol'; }
+
+function sourceLine(state) {
+    if (!state) return 'no probe yet';
+    if (state.src && state.pct != null) return 'källa ' + state.src;
+    const d = state.debug || {};
+    // show first non-default probe result for the strip
+    const order = ['d5939', 'd5938', 'obd52', 'f452', 'd550D', 'd593A'];
+    for (let i = 0; i < order.length; i++) {
+        const v = d[order[i]];
+        if (v && v !== 'not asked') return order[i].replace(/^d/, '') + ': ' + v;
+    }
+    return 'väntar på DME…';
+}
+
+/** "Etanol 78 %" or "Etanol -- %" */
+function displayText(state) {
+    const v = value(state);
+    return 'Etanol ' + (v == null ? '--' : String(v)) + ' %';
 }
 
 function debugRows(state) {
     const d = (state && state.debug) || {};
     return [
-        ['UDS 5939 Active', d.d5939 || '--'],
-        ['UDS 5938 sensor', d.d5938 || '--'],
+        ['5939 Active?', d.d5939 || '--'],
+        ['5938 sensor?', d.d5938 || '--'],
+        ['593A oildbg', d.d593A || '--'],
         ['OBD 01 52', d.obd52 || '--'],
-        ['UDS 22 F452', d.f452 || '--'],
-        ['UDS 22 550D', d.d550D || '--'],
-        ['Source', state && state.src ? (state.src + ' · ' + state.pct + '%') : 'none'],
+        ['UDS F452', d.f452 || '--'],
+        ['UDS 550D', d.d550D || '--'],
+        ['UI', displayText(state) + (state && state.src ? ' · ' + state.src : '')],
     ];
 }
 
-/** Probe table for main.js rotation (MHD Active first). */
 const PROBES = [
     { key: '5939', bytes: [0x22, 0x59, 0x39], apply: fromUds5939 },
     { key: '5938', bytes: [0x22, 0x59, 0x38], apply: fromUds5938 },
-    { key: 'F452', bytes: [0x22, 0xF4, 0x52], apply: fromUdsF452 },
     { key: '550D', bytes: [0x22, 0x55, 0x0D], apply: fromUds550D },
+    { key: 'F452', bytes: [0x22, 0xF4, 0x52], apply: fromUdsF452 },
+    { key: '593A', bytes: [0x22, 0x59, 0x3A], apply: fromUds593A },
 ];
 
 module.exports = {
     CAN, CAN_IDS, FRAC, PROBES, createEthanol, setOk, decodeByte, decodePayload,
-    fromUds5939, fromUds5938, fromObd52Byte, fromUdsF452, fromUds550D, fromCanEc,
-    value, label, debugRows,
+    fromUds5939, fromUds5938, fromUds593A, fromObd52Byte, fromUdsF452, fromUds550D, fromCanEc,
+    value, label, sourceLine, displayText, debugRows,
     test: function () {
         const assert = require('assert');
         const s = createEthanol();
-        // 78% → u16 = round(0.78 * 32768) = 25559
         const raw = Math.round(0.78 * 32768);
         assert(fromUds5939([0x62, 0x59, 0x39, (raw >> 8) & 255, raw & 255], s));
         assert.strictEqual(s.pct, 78);
-        assert.strictEqual(s.src, 'uds5939');
-        assert(fromUds5938([0x62, 0x59, 0x38, (raw >> 8) & 255, raw & 255], s));
-        assert.strictEqual(s.src, 'uds5938');
-        assert(fromObd52Byte(78, s));
-        assert(fromUdsF452([0x62, 0xF4, 0x52, 78], s));
-        assert(fromUds550D([0x62, 0x55, 0x0D, 178], s));
-        assert(debugRows(s)[0][0].indexOf('5939') >= 0);
-        assert.strictEqual(PROBES[0].key, '5939');
-        console.log('ethanol self-check ok (5939 Active @78%)');
+        assert.strictEqual(label(), 'Etanol');
+        assert.strictEqual(displayText(s), 'Etanol 78 %');
+        assert(displayText(createEthanol()) === 'Etanol -- %');
+        fromUds593A([0x62, 0x59, 0x3A, 0x01, 0x00], s);
+        assert(s.debug.d593A.indexOf('oil') >= 0);
+        assert.strictEqual(s.pct, 78); // 593A must not clear %
+        console.log('ethanol self-check ok');
     },
 };
 

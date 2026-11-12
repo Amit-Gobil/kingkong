@@ -1,8 +1,8 @@
 {
  "id": "kingkong_cardata",
- "version": "1.2.3",
+ "version": "1.2.4",
  "title": "Kingkong",
- "description": "Kingkong Quiet Dials ID8: etanol from MHD Active via UDS 5939/5938 (Amit log), OBD52/F452/550D fallbacks, Settings probe debug, Skicka-logg.",
+ "description": "Kingkong Quiet Dials: Fuel etanol strip Etanol XX/-- %, MHD Active probes 5939/5938/550D/F452/593A + Settings debug, LPFP UDS fallback.",
  "mguHmi": [
   "ID8"
  ],

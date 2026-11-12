@@ -618,9 +618,33 @@ const GROUP_DIDS = (() => {      // the catalog's identifiers: the first pass's 
     return s.size;
 })();
 let groupsRes = null, groupsAsked = 0, groupsBusy = false;
+
+// Low pressure fuel: OBD 0x0A often missing on S58 — try UDS 58F3 (kPa×0.1) then 5463 (hPa)
+let lpfpUdsTurn = 0;
+function readLpfp() {
+    if (Date.now() > activeUntil) return;
+    if (obdFresh('lpfp') && typeof obdVal('lpfp') === 'number') return;
+    if (!tasu || (!onPage('fuel') && !onPage('engine'))) return;
+    lpfpUdsTurn++;
+    if (lpfpUdsTurn % 2 === 1) {
+        askDme('58F3', [0x22, 0x58, 0xF3], (u) => {
+            if (!u || u[0] !== 0x62 || u.length < 5) return;
+            const raw = (u[3] << 8) | u[4];
+            const bar = raw * 0.1 / 100; // table: ×0.1 kPa → bar
+            if (bar >= 0 && bar < 20) o.lpfp = { value: bar, at: Date.now() };
+        });
+    } else {
+        askDme('5463', [0x22, 0x54, 0x63], (u) => {
+            if (!u || u[0] !== 0x62 || u.length < 5) return;
+            let raw = (u[3] << 8) | u[4];
+            if (raw > 32767) raw -= 65536; // s16
+            const bar = raw / 1000; // hPa → bar
+            if (bar >= 0 && bar < 20) o.lpfp = { value: bar, at: Date.now() };
+        });
+    }
+}
 function readEthanol() {
-    // MHD Active (Amit log ≈78%): prefer UDS 5939 (injection/active) then 5938 (sensor),
-    // then forced OBD 52 / F452 / 550D. See ethanol.js PROBES.
+    // Probe rotation: 5939/5938/550D/F452/593A(+debug) and forced OBD 52. Settings ethDebug always updates.
     if (Date.now() > activeUntil) return;
     if (obdFresh('ethanol') && typeof obdVal('ethanol') === 'number') {
         ethMod.fromObd52Byte(obdVal('ethanol'), ethanol);
@@ -631,13 +655,15 @@ function readEthanol() {
         if (!pending) setTimeout(obdTick, 0);
     }
     if (!tasu) return;
-    if (ethanol.pct != null && Date.now() - ethanol.at < 4000) return;
     const probes = ethMod.PROBES;
     const probe = probes[ethUdsTurn % probes.length];
     ethUdsTurn++;
     askDme(probe.key, probe.bytes.slice(), (u) => {
-        if (ethanol.pct != null && Date.now() - ethanol.at < 4000) return;
-        probe.apply(u, ethanol);
+        const had = ethanol.pct != null && Date.now() - ethanol.at < 5000;
+        const prevPct = ethanol.pct, prevSrc = ethanol.src, prevAt = ethanol.at;
+        const ok = probe.apply(u, ethanol);
+        // 593A is debug-only; never let a failed probe clear a good value
+        if (had && !ok) { ethanol.pct = prevPct; ethanol.src = prevSrc; ethanol.at = prevAt; }
     });
 }
 
@@ -730,13 +756,13 @@ function render() {
         .set('coolantBar', { value: rnd(V.coolant()), max: ends.coolant })
         .set('intakeBar', { value: rnd(V.iat()), max: ends.intake })
         .set('batteryBar', { value: rnd(V.volt(), 1) })
-        .set('ethanolBar', { value: ethShow, label: ethMod.label(ethanol) })
+        .set('ethanolBar', { value: ethShow, label: ethMod.label(), unit: '%', dec: 0 })
         .set('peakKv', { rows: [
             ['RPM peak', peaks.rpm === undefined ? '--' : String(Math.round(peaks.rpm))],
             ['Boost peak', peaks.boost === undefined ? '--' : peaks.boost.toFixed(2)],
             ['Effekt peak', peaks.hp === undefined ? '--' : String(Math.round(peaks.hp))],
             ['Vridmoment peak', peaks.nm === undefined ? '--' : String(Math.round(peaks.nm))],
-            ['Etanol', ethShow === null || ethShow === undefined ? '--' : `${ethShow} %` + (ethanol.src ? ` · ${ethanol.src}` : '')],
+            ['Etanol', ethMod.displayText(ethanol).replace(/^Etanol /, '') + (ethanol.src ? ` · ${ethanol.src}` : '')],
         ] });
     // auto-log ring (always while polling window active)
     if (Date.now() <= activeUntil) {
@@ -750,7 +776,12 @@ function render() {
     const pg = screens.st.name, now = Date.now(), paused = now > activeUntil, cur = (x) => (x && x.at >= activeSince ? x : null);
     if (pg === 'fuel') {
         setAll(tabs.fuelView(series, fuelNow(), paused, ethShow));
-        screens.set('ethanolFuel', { value: ethShow, label: ethMod.label(ethanol) });
+        // Quiet Dials strip: short label + value/-- % (never a wide miniTile with value on the far right)
+        screens.set('ethanolFuel', {
+            value: ethShow == null ? '--' : String(ethShow),
+            unit: '%', size: 64, color: ethShow == null ? 'dim' : '', align: 'left',
+        });
+        screens.set('ethanolFuelSrc', { text: ethMod.sourceLine(ethanol) });
     }
     if (pg === 'trips') setAll(tabs.tripsView({ tc, now, period: tripPeriod, currency, flow: tripFlow(now), running: /^(running|starting)$/.test(engineRun() || ''), paused }));
     if (pg === 'transmission') { setAll(tabs.transView(Object.assign({}, trans, { live: cur(trans.live), paused }))); transPictures(); }
@@ -864,7 +895,7 @@ createHost({
             for (const k of Object.keys(hits)) { rates[k] = hits[k] / 5; hits[k] = 0; }
         }, 5000);
         setInterval(tripTick, 500);                                                 // Trips, also with the screens closed
-        setInterval(() => { readFuelRef(); readBoostTarget(); readEthanol(); readTrans(); readDpf(); }, 1000);
+        setInterval(() => { readFuelRef(); readBoostTarget(); readEthanol(); readLpfp(); readTrans(); readDpf(); }, 1000);
         setInterval(readGroups, 2000);
         setInterval(() => { sampleSeries(); if (onPage('dpf')) filt.sample(Date.now()); }, 5000);
     },
