@@ -21,6 +21,13 @@ This repository is an MGU Store **source** (`mgu-repo.json`).
 The car needs the Store + a GPU **renderer** already installed (Kingkong declares
 `needs: ["renderer"]`).
 
+## Cluster strip (`kingkong_cluster`)
+KOMBI overlay client for ID8. Speaks the public **cluster-render** socket protocol.
+Vendors `apps/kingkong_cluster/src/cluster_render_client.js` from
+[robertnisipeanu/idrive-apps](https://github.com/robertnisipeanu/idrive-apps)
+`native/cluster-render/js/` (**MPL-2.0**). Install Store tool **Cluster renderer**
+on the car before expecting pixels on the instrument cluster.
+
 ## Disclaimer
 Unofficial hobby / tuning tool. Not affiliated with BMW AG. Use parked or on a
 closed track; keep your eyes on the road. Read-only diagnostic access only.

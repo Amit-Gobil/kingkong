@@ -1,0 +1,19 @@
+{
+  "id": "kingkong_cluster",
+  "appletId": 22975,
+  "appletIdNote": "Unused high OAP appletId for Kingkong Cluster (KOMBI strip). Never reuse cardata 20973 or race 21974.",
+  "applicationUuid": "00827e61-99cf-449d-b6c2-8aac1249f95a",
+  "stringBundleUuid": "e26a81da-cd05-4130-85dd-8addf9e64399",
+  "resourceBundleUuid": "45d9e4d1-fda4-4891-b44e-f8854d44c0f9",
+  "entryPointUuid": "6fee719e-771a-4fc2-98eb-da480b2097fc",
+  "entryPointTextId": "SID_7",
+  "icon": "kingkong_cluster_icon.png",
+  "forbiddenCollisions": {
+    "cardataAppletId": 20973,
+    "raceAppletId": 21974,
+    "cardataEntryPoint": "49e7d461-9f2d-4ade-9cb3-5c1c116d50ab",
+    "raceEntryPoint": "734a86da-693c-44fb-a934-96091609ca40",
+    "cardataIcon": "kingkong_cardata_icon.png",
+    "raceIcon": "kingkong_race_icon.png"
+  }
+}
