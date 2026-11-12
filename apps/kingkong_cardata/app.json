@@ -1,8 +1,8 @@
 {
  "id": "kingkong_cardata",
- "version": "1.2.2",
+ "version": "1.2.3",
  "title": "Kingkong",
- "description": "Kingkong Tuning Quiet Dials for BMW iDrive 8: raised bottom tabs (above ID8 chrome), etanol via Motive ReFlex/CAN (OBD 52) + UDS 550D, Skicka-logg. Black and gold.",
+ "description": "Kingkong Quiet Dials ID8: etanol from MHD Active via UDS 5939/5938 (Amit log), OBD52/F452/550D fallbacks, Settings probe debug, Skicka-logg.",
  "mguHmi": [
   "ID8"
  ],

@@ -186,7 +186,7 @@ const obdFresh = (k) => o[k] && 'value' in o[k] && Date.now() - o[k].at < OBD_FR
 const busC = (r, cal) => (valid(r, 255) ? cal(r) : undefined);
 let gearK = CAL.gearK;
 const boostTgt = { kpa: null, at: 0 };   // the boost target from 22 4AB0 (absolute kPa): Fuel
-const ethanol = ethMod.createEthanol();  // Reflex/CAN mirrors then UDS 550D
+const ethanol = ethMod.createEthanol();  // MHD Active (5939) then 5938 / OBD52 / 550D
 let ethObdQueued = false, ethUdsTurn = 0;
 const V = {
     // the bus while it answers (polled every 50-100 ms), OBD (a round trip per value) only as fallback
@@ -619,8 +619,8 @@ const GROUP_DIDS = (() => {      // the catalog's identifiers: the first pass's 
 })();
 let groupsRes = null, groupsAsked = 0, groupsBusy = false;
 function readEthanol() {
-    // Force OBD 01 52 even when missing from the DME support bitmap; also UDS F452 + 550D.
-    // PT-CAN frames (0xEC/0xED/0x334/0x4CB) are ingested by MHD — HU reads DME mirrors only.
+    // MHD Active (Amit log ≈78%): prefer UDS 5939 (injection/active) then 5938 (sensor),
+    // then forced OBD 52 / F452 / 550D. See ethanol.js PROBES.
     if (Date.now() > activeUntil) return;
     if (obdFresh('ethanol') && typeof obdVal('ethanol') === 'number') {
         ethMod.fromObd52Byte(obdVal('ethanol'), ethanol);
@@ -632,18 +632,13 @@ function readEthanol() {
     }
     if (!tasu) return;
     if (ethanol.pct != null && Date.now() - ethanol.at < 4000) return;
+    const probes = ethMod.PROBES;
+    const probe = probes[ethUdsTurn % probes.length];
     ethUdsTurn++;
-    if (ethUdsTurn % 2 === 1) {
-        askDme('F452', [0x22, 0xF4, 0x52], (u) => {
-            if (ethanol.pct != null && Date.now() - ethanol.at < 4000) return;
-            ethMod.fromUdsF452(u, ethanol);
-        });
-    } else {
-        askDme('550D', [0x22, 0x55, 0x0D], (u) => {
-            if (ethanol.pct != null && Date.now() - ethanol.at < 4000) return;
-            ethMod.fromUds550D(u, ethanol);
-        });
-    }
+    askDme(probe.key, probe.bytes.slice(), (u) => {
+        if (ethanol.pct != null && Date.now() - ethanol.at < 4000) return;
+        probe.apply(u, ethanol);
+    });
 }
 
 function readGroups() {
