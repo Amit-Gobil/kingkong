@@ -8,6 +8,9 @@
  * AppStatus, NSM, …). Race 1.0.0–1.0.2 shipped a stripped manifest that let the
  * tile install but OnlineApp.start() fail silently on open.
  *
+ * Ensures every renderer/screens.json screen has kind:"gpu" (+ Quiet Dials
+ * bg/theme). Without kind, ScreenApp._find fails → title bar only / blank blue.
+ *
  * Usage: node tools/pack-race.js [version]
  * Default version: apps/kingkong_race/app.json → version
  */
@@ -151,6 +154,37 @@ for (const key of Object.keys(OAP_LIFECYCLE_PROXIES)) {
 }
 if (!manifest.proxies['de.bmw.infotainment.telematic.oapcontroller.OAPController']) {
   die('OAPController proxy missing — OnlineApp will not open');
+}
+
+// ScreenApp._find only matches screens with kind === 'gpu'. Without it, RHMI
+// opens (title bar) but mgu-renderd never shows → blank blue ID8 content area.
+const SCREEN_META = {
+  drag: { title: 'Drag', entry: true },
+  race: { title: 'Race', entry: false },
+  online: { title: 'Online', entry: false },
+  settings: { title: 'Settings', entry: false }
+};
+const screensPath = path.join(pkgDir, 'renderer', 'screens.json');
+if (!fs.existsSync(screensPath)) die('renderer/screens.json missing in package');
+const screensDoc = readJson(screensPath);
+if (!Array.isArray(screensDoc.screens) || !screensDoc.screens.length) {
+  die('renderer/screens.json has no screens');
+}
+for (const st of screensDoc.screens) {
+  const meta = SCREEN_META[st.name] || { title: st.name, entry: false };
+  st.kind = 'gpu';
+  st.title = meta.title;
+  st.entry = !!meta.entry;
+  st.bg = st.bg || '#050505';
+  st.bgArea = st.bgArea || 'app';
+  st.theme = st.theme || 'kingkong';
+}
+writeJson(screensPath, screensDoc);
+for (const st of screensDoc.screens) {
+  if (st.kind !== 'gpu') die(`screen ${st.name} missing kind:gpu after patch`);
+}
+if (!screensDoc.screens.some((s) => s.name === 'drag' && s.entry === true)) {
+  die('drag screen must be entry:true');
 }
 
 const pkg = readJson(path.join(pkgDir, 'package.json'));
