@@ -1,0 +1,296 @@
+{
+  "name": "adjust",
+  "kind": "gpu",
+  "title": "Adjust",
+  "entry": false,
+  "bg": "#050505",
+  "bgArea": "app",
+  "theme": "kingkong",
+  "components": [
+    {
+      "name": "adjustMenu",
+      "rtype": "gpu",
+      "gpu": "teleShell",
+      "x": 0,
+      "y": 76,
+      "w": 2880,
+      "h": 88,
+      "opts": {
+        "app": "Kingkong",
+        "icon": "gauge",
+        "tabs": "Engine, Fuel, Trips, Transmission, Adjust, Details, Settings",
+        "sel": 4,
+        "chips": "",
+        "title": "Adjust",
+        "sub": "Maps · exhaust flap · Max Cooling",
+        "back": false,
+        "credit": "Kingkong Tuning",
+        "hu": "id8",
+        "hideTabs": true
+      }
+    },
+    {
+      "name": "mapHair",
+      "rtype": "gpu",
+      "gpu": "rect",
+      "x": 40,
+      "y": 190,
+      "w": 901,
+      "h": 2,
+      "opts": { "color": "#22272f", "radius": 0 }
+    },
+    {
+      "name": "mapLabel",
+      "rtype": "gpu",
+      "gpu": "text",
+      "x": 40,
+      "y": 210,
+      "w": 901,
+      "h": 28,
+      "opts": {
+        "text": "ENGINE MAP",
+        "size": 24,
+        "font": "bold",
+        "spacing": 2,
+        "align": "left",
+        "color": "#d4af37",
+        "wrap": false
+      }
+    },
+    {
+      "name": "mapValue",
+      "rtype": "gpu",
+      "gpu": "text",
+      "x": 40,
+      "y": 260,
+      "w": 901,
+      "h": 110,
+      "opts": {
+        "text": "MAP --",
+        "size": 96,
+        "font": "bold",
+        "align": "left",
+        "color": "#f5ecd2",
+        "wrap": false
+      }
+    },
+    {
+      "name": "mapSub",
+      "rtype": "gpu",
+      "gpu": "text",
+      "x": 40,
+      "y": 390,
+      "w": 901,
+      "h": 28,
+      "opts": {
+        "text": "Tap a map: it switches at once",
+        "size": 24,
+        "font": "label",
+        "align": "left",
+        "color": "#8b9099",
+        "wrap": false
+      }
+    },
+    {
+      "name": "mapNote",
+      "rtype": "gpu",
+      "gpu": "text",
+      "x": 40,
+      "y": 430,
+      "w": 901,
+      "h": 56,
+      "opts": {
+        "text": "The engine light may flash while the map changes — that is normal",
+        "size": 22,
+        "font": "label",
+        "align": "left",
+        "color": "#8b9099",
+        "wrap": true
+      }
+    },
+    {
+      "name": "mapSeg",
+      "rtype": "gpu",
+      "gpu": "teleSeg",
+      "x": 40,
+      "y": 640,
+      "w": 901,
+      "h": 72,
+      "opts": { "items": "Map 1, Map 2, Map 3, Map 4", "sel": -1, "disabled": false }
+    },
+    {
+      "name": "flapHair",
+      "rtype": "gpu",
+      "gpu": "rect",
+      "x": 989,
+      "y": 190,
+      "w": 901,
+      "h": 2,
+      "opts": { "color": "#22272f", "radius": 0 }
+    },
+    {
+      "name": "flapLabel",
+      "rtype": "gpu",
+      "gpu": "text",
+      "x": 989,
+      "y": 210,
+      "w": 901,
+      "h": 28,
+      "opts": {
+        "text": "EXHAUST FLAP",
+        "size": 24,
+        "font": "bold",
+        "spacing": 2,
+        "align": "left",
+        "color": "#d4af37",
+        "wrap": false
+      }
+    },
+    {
+      "name": "flapValue",
+      "rtype": "gpu",
+      "gpu": "text",
+      "x": 989,
+      "y": 260,
+      "w": 901,
+      "h": 110,
+      "opts": {
+        "text": "--",
+        "size": 96,
+        "font": "bold",
+        "align": "left",
+        "color": "#f5ecd2",
+        "wrap": false
+      }
+    },
+    {
+      "name": "flapSub",
+      "rtype": "gpu",
+      "gpu": "text",
+      "x": 989,
+      "y": 390,
+      "w": 901,
+      "h": 56,
+      "opts": {
+        "text": "Flap position not read yet",
+        "size": 24,
+        "font": "label",
+        "align": "left",
+        "color": "#8b9099",
+        "wrap": true
+      }
+    },
+    {
+      "name": "flapSeg",
+      "rtype": "gpu",
+      "gpu": "teleSeg",
+      "x": 989,
+      "y": 640,
+      "w": 901,
+      "h": 72,
+      "opts": { "items": "Open, Close, OEM", "sel": -1, "disabled": false }
+    },
+    {
+      "name": "coolHair",
+      "rtype": "gpu",
+      "gpu": "rect",
+      "x": 1939,
+      "y": 190,
+      "w": 901,
+      "h": 2,
+      "opts": { "color": "#22272f", "radius": 0 }
+    },
+    {
+      "name": "coolLabel",
+      "rtype": "gpu",
+      "gpu": "text",
+      "x": 1939,
+      "y": 210,
+      "w": 901,
+      "h": 28,
+      "opts": {
+        "text": "MAX COOLING",
+        "size": 24,
+        "font": "bold",
+        "spacing": 2,
+        "align": "left",
+        "color": "#d4af37",
+        "wrap": false
+      }
+    },
+    {
+      "name": "coolValue",
+      "rtype": "gpu",
+      "gpu": "text",
+      "x": 1939,
+      "y": 260,
+      "w": 901,
+      "h": 110,
+      "opts": {
+        "text": "OFF",
+        "size": 96,
+        "font": "bold",
+        "align": "left",
+        "color": "#f5ecd2",
+        "wrap": false
+      }
+    },
+    {
+      "name": "coolSub",
+      "rtype": "gpu",
+      "gpu": "text",
+      "x": 1939,
+      "y": 390,
+      "w": 901,
+      "h": 28,
+      "opts": {
+        "text": "",
+        "size": 24,
+        "font": "label",
+        "align": "left",
+        "color": "#8b9099",
+        "wrap": false
+      }
+    },
+    {
+      "name": "coolNote",
+      "rtype": "gpu",
+      "gpu": "text",
+      "x": 1939,
+      "y": 430,
+      "w": 901,
+      "h": 56,
+      "opts": {
+        "text": "On only with the engine running. Map and cooling show what the DME accepted.",
+        "size": 22,
+        "font": "label",
+        "align": "left",
+        "color": "#8b9099",
+        "wrap": true
+      }
+    },
+    {
+      "name": "coolSeg",
+      "rtype": "gpu",
+      "gpu": "teleSeg",
+      "x": 1939,
+      "y": 640,
+      "w": 901,
+      "h": 72,
+      "opts": { "items": "On, Off", "sel": 1, "disabled": false }
+    },
+    {
+      "name": "adjustTabs",
+      "rtype": "gpu",
+      "gpu": "teleTabBar",
+      "x": 0,
+      "y": 748,
+      "w": 2880,
+      "h": 80,
+      "opts": {
+        "tabs": "Engine, Fuel, Trips, Transmission, Adjust, Details, Settings",
+        "sel": 4
+      }
+    }
+  ]
+}
