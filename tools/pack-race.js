@@ -8,7 +8,9 @@
  * AppStatus, NSM, …). Race 1.0.0–1.0.2 shipped a stripped manifest that let the
  * tile install but OnlineApp.start() fail silently on open.
  *
- * Ensures every renderer/screens.json screen has kind:"gpu" (+ Quiet Dials
+ * Overwrites renderer/screens.json from apps/kingkong_race/renderer/ (Drag +
+ * Race tree — never cardata Engine/Fuel). Injects raceTree/raceBrand into the
+ * packaged tele-widgets + gpu-elements. Ensures kind:"gpu" (+ Quiet Dials
  * bg/theme). Without kind, ScreenApp._find fails → title bar only / blank blue.
  *
  * Usage: node tools/pack-race.js [version]
@@ -156,19 +158,68 @@ if (!manifest.proxies['de.bmw.infotainment.telematic.oapcontroller.OAPController
   die('OAPController proxy missing — OnlineApp will not open');
 }
 
-// ScreenApp._find only matches screens with kind === 'gpu'. Without it, RHMI
-// opens (title bar) but mgu-renderd never shows → blank blue ID8 content area.
+// Race owns its screens + raceTree/raceBrand widgets (not cardata Engine/Fuel).
+// Source of truth: apps/kingkong_race/renderer/{screens.json,race-widgets.js}
 const SCREEN_META = {
   drag: { title: 'Drag', entry: true },
   race: { title: 'Race', entry: false },
   online: { title: 'Online', entry: false },
   settings: { title: 'Settings', entry: false }
 };
-const screensPath = path.join(pkgDir, 'renderer', 'screens.json');
-if (!fs.existsSync(screensPath)) die('renderer/screens.json missing in package');
+const RACE_NAMES = Object.keys(SCREEN_META);
+const CARDATA_SCREEN_NAMES = ['engine', 'fuel', 'trips', 'transmission', 'dpf', 'details'];
+const screensSrc = path.join(APP, 'renderer', 'screens.json');
+const raceWidgetsSrc = path.join(APP, 'renderer', 'race-widgets.js');
+if (!fs.existsSync(screensSrc)) die('apps/kingkong_race/renderer/screens.json missing');
+if (!fs.existsSync(raceWidgetsSrc)) die('apps/kingkong_race/renderer/race-widgets.js missing');
+
+const rendererDir = path.join(pkgDir, 'renderer');
+if (!fs.existsSync(rendererDir)) die('renderer/ missing in package');
+fs.copyFileSync(screensSrc, path.join(rendererDir, 'screens.json'));
+fs.copyFileSync(raceWidgetsSrc, path.join(rendererDir, 'race-widgets.js'));
+
+const telePath = path.join(rendererDir, 'tele-widgets.js');
+let teleSrc = fs.readFileSync(telePath, 'utf8');
+if (!teleSrc.includes("require('./race-widgets')")) {
+  const hook =
+    "\nC.tab = C.tab || C.dim;\n" +
+    "(function () {\n" +
+    "    const RW = require('./race-widgets');\n" +
+    "    Object.assign(DRAW, RW.DRAW);\n" +
+    "    Object.assign(TRY, RW.TRY || {});\n" +
+    "})();\n";
+  if (!teleSrc.includes('module.exports')) die('tele-widgets.js missing module.exports');
+  teleSrc = teleSrc.replace('module.exports', hook + 'module.exports');
+  fs.writeFileSync(telePath, teleSrc);
+}
+
+const gpuElPath = path.join(rendererDir, 'public', 'gpu-elements.js');
+let gpuElSrc = fs.readFileSync(gpuElPath, 'utf8');
+if (!gpuElSrc.includes('raceTree:')) {
+  const elInject =
+    "        raceTree: { label: 'Race tree', icon: '●', tele: true, box: [240, 520], fields: [" +
+    "F('amber', 'Ambers', 'text', '0,0,0'), F('green', 'Green', 'bool', false), " +
+    "F('foul', 'Foul', 'bool', false), F('staged', 'Staged', 'bool', true)] },\n" +
+    "        raceBrand: { label: 'Race brand', icon: 'K', tele: true, box: [900, 110], fields: [" +
+    "F('title', 'Title', 'text', 'KINGKONG'), F('sub', 'Sub', 'text', 'TUNING'), " +
+    "F('align', 'Align', 'select', 'left', ['left', 'center'])] },\n";
+  const anchor = "        teleTabBar: { label: 'T Bottom tabs'";
+  if (!gpuElSrc.includes(anchor)) die('gpu-elements.js teleTabBar anchor missing');
+  gpuElSrc = gpuElSrc.replace(anchor, elInject + anchor);
+  fs.writeFileSync(gpuElPath, gpuElSrc);
+}
+
+const screensPath = path.join(rendererDir, 'screens.json');
 const screensDoc = readJson(screensPath);
 if (!Array.isArray(screensDoc.screens) || !screensDoc.screens.length) {
   die('renderer/screens.json has no screens');
+}
+const packedNames = screensDoc.screens.map((s) => s.name);
+for (const bad of CARDATA_SCREEN_NAMES) {
+  if (packedNames.includes(bad)) die(`Race screens must not include cardata screen "${bad}"`);
+}
+for (const need of RACE_NAMES) {
+  if (!packedNames.includes(need)) die(`Race screens missing "${need}"`);
 }
 for (const st of screensDoc.screens) {
   const meta = SCREEN_META[st.name] || { title: st.name, entry: false };
@@ -185,6 +236,20 @@ for (const st of screensDoc.screens) {
 }
 if (!screensDoc.screens.some((s) => s.name === 'drag' && s.entry === true)) {
   die('drag screen must be entry:true');
+}
+const raceScreen = screensDoc.screens.find((s) => s.name === 'race');
+if (!raceScreen.components.some((c) => c.gpu === 'raceTree' || c.name === 'raceTree')) {
+  die('race screen must include raceTree christmas-tree element');
+}
+const dragScreen = screensDoc.screens.find((s) => s.name === 'drag');
+if (dragScreen.components.some((c) => /engine|fuel|rpm|boost/i.test(c.name || ''))) {
+  die('drag screen looks like cardata Engine/Fuel');
+}
+if (!fs.readFileSync(telePath, 'utf8').includes("require('./race-widgets')")) {
+  die('tele-widgets.js missing race-widgets hook');
+}
+if (!fs.readFileSync(gpuElPath, 'utf8').includes('raceTree:')) {
+  die('gpu-elements.js missing raceTree');
 }
 
 const pkg = readJson(path.join(pkgDir, 'package.json'));

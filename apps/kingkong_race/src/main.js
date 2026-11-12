@@ -178,88 +178,112 @@ function statusLine() {
     return timer.state.toUpperCase();
 }
 
-function splitRows(result, trap, bestMap, fresh) {
+function splitTableRows(result, trap, fresh) {
     return SPLITS.map((s) => {
         const v = result && result[s.key];
-        const b = bestMap && bestMap[s.key];
         const mark = fresh && fresh[s.key] ? ' ★' : '';
-        const trapS = (s.key === 'm201' && trap && typeof trap.m201 === 'number') ? ` · ${trap.m201.toFixed(1)} km/h` : '';
-        const bestS = b ? ` (bäst ${b.s.toFixed(2)} s)` : '';
-        return [s.label, (typeof v === 'number' ? v.toFixed(2) + ' s' : '--') + trapS + bestS + mark];
+        const time = typeof v === 'number' ? v.toFixed(2) + ' s' + mark : '--';
+        let spd = '--';
+        if (trap && typeof trap[s.key] === 'number') spd = trap[s.key].toFixed(0);
+        else if (s.to) spd = String(s.to);
+        return [s.label, time, spd];
     });
 }
 
-function treeLights(m) {
-    const a = (m.lights && m.lights.amber) || [false, false, false];
-    const g = !!(m.lights && m.lights.green);
-    const cell = (on, off, lit) => (lit ? on : off);
-    return [
-        ['Amber 1', cell('●', '○', a[0])],
-        ['Amber 2', cell('●', '○', a[1])],
-        ['Amber 3', cell('●', '○', a[2])],
-        ['Green', cell('● GO', '○', g)],
-    ];
+function bestRows() {
+    return ['ft60', 'kmh100', 'm201'].map((k) => {
+        const s = SPLITS.find((x) => x.key === k);
+        const b = best[k];
+        return [s.label, b ? b.s.toFixed(2) + ' s' : '--'];
+    });
 }
 
 function racePhaseText(m) {
-    if (m.phase === 'idle') return m.canStart ? 'REDO ATT STARTA TRÄD' : 'STANNA BILEN · FARTSIGNAL';
-    if (m.phase === 'ready') return `GÖR ER REDO · ${m.ready != null ? m.ready + ' s' : ''}`;
-    if (m.phase === 'count') return 'TRÄD · VÄNTA PÅ GRÖNT';
-    if (m.phase === 'armed') return 'GRÖNT · KÖR!';
-    if (m.phase === 'run') return 'TIDTAGNING';
-    if (m.phase === 'foul') return 'FOUL · RÖRT FÖRE GRÖNT';
-    if (m.phase === 'result') return 'RESULTAT';
+    if (m.phase === 'idle') return m.canStart ? 'GET READY' : 'STANNA BILEN';
+    if (m.phase === 'ready') return 'GET READY';
+    if (m.phase === 'count') return 'TREE';
+    if (m.phase === 'armed') return 'GO!';
+    if (m.phase === 'run') return 'RUN';
+    if (m.phase === 'foul') return 'FOUL';
+    if (m.phase === 'result') return 'RESULT';
     return String(m.phase || '').toUpperCase();
+}
+
+function raceCueText(m) {
+    if (m.phase === 'ready' && m.ready != null) return m.ready.toFixed(0) + '.00s';
+    if (m.phase === 'armed') return 'GREEN';
+    if (m.phase === 'foul') return 'EARLY';
+    if (m.phase === 'count') return 'WAIT';
+    if (m.phase === 'idle') return m.canStart ? '0.00s' : 'NO SPEED';
+    return '0.00s';
 }
 
 function syncTabs() {
     if (!screens || !screens.st) return;
     const cur = screens.st.name;
     const sel = Math.max(0, PAGES.indexOf(cur));
-    PAGES.forEach((p) => {
-        screens.set(`${p}Menu`, { sel, hideTabs: true, app: 'Kingkong Race', sub: 'Quiet Dials · ingen DME' });
-        screens.set(`${p}Tabs`, { sel });
-    });
+    PAGES.forEach((p) => screens.set(`${p}Tabs`, { sel }));
 }
 
 function render() {
     if (!screens || !screens.st) return;
     const now = mono();
-    const pg = screens.st.name;
     const elapsed = timer.elapsed(now);
     const rm = Object.assign(race.model(), { canStart: race.canStart(signal, speed) });
+    const lights = rm.lights || { amber: [false, false, false], green: false, staged: false };
 
-    screens.set('speedVal', { value: signal ? String(Math.round(speed)) : '--', unit: 'km/h', size: 96, color: signal ? '' : 'dim' });
-    screens.set('timerVal', { value: elapsed ? elapsed.toFixed(2) : '0.00', unit: 's', size: 120, color: timer.state === 'run' ? '' : 'dim' });
+    screens.set('speedVal', {
+        value: signal ? String(Math.round(speed)) : '--',
+        unit: 'km/h',
+        size: 72,
+        color: signal ? '' : 'dim',
+    });
+    screens.set('timerVal', {
+        value: elapsed ? elapsed.toFixed(3) : '0.000',
+        unit: 's',
+        size: 140,
+        color: timer.state === 'run' ? '#d4af37' : 'dim',
+    });
     screens.set('statusText', { text: statusLine() });
-    screens.set('peakGText', { text: peakG > 0 ? `Peak g ${peakG.toFixed(2)}` : 'Peak g --' });
-    screens.set('splitKv', { rows: splitRows(timer.result, timer.trapSpeed, best, newBest) });
-    screens.set('bestKv', {
-        rows: SPLITS.map((s) => {
-            const b = best[s.key];
-            return [s.label + ' bäst', b ? b.s.toFixed(2) + ' s' : '--'];
-        }),
-    });
+    screens.set('peakGText', { text: peakG > 0 ? peakG.toFixed(2) + ' g' : '-- g' });
+    screens.set('splitTable', { rows: splitTableRows(timer.result, timer.trapSpeed, newBest) });
+    screens.set('bestKv', { rows: bestRows() });
 
-    // Race tree page
-    screens.set('racePhase', { text: racePhaseText(rm) });
-    screens.set('raceCode', { text: 'Rum ' + (rm.code || '----') + ' · solo practice' });
-    screens.set('raceLights', { rows: treeLights(rm) });
-    screens.set('raceReaction', {
-        text: rm.reaction != null ? `Reaktion ${rm.reaction.toFixed(3)} s` : (rm.phase === 'foul' ? 'Foul' : 'Reaktion --'),
+    // Race tree page — visual christmas tree (not cardata gauges, not text ○ rows)
+    screens.set('raceTree', {
+        amber: lights.amber || [false, false, false],
+        green: !!lights.green,
+        foul: rm.phase === 'foul',
+        staged: lights.staged !== false,
     });
-    screens.set('raceTimer', { value: (rm.elapsed || 0).toFixed(2), unit: 's', size: 96 });
-    screens.set('raceSplits', { rows: splitRows(rm.result, rm.trap, best, {}) });
-    screens.set('raceStartBtn', { text: 'Starta träd', kind: 'primary', disabled: !rm.canStart && rm.phase === 'idle' });
+    screens.set('racePhase', { text: racePhaseText(rm) });
+    screens.set('raceCue', { text: raceCueText(rm) });
+    screens.set('raceCode', { text: 'Rum ' + (rm.code || '----') + ' · solo practice' });
+    screens.set('raceReaction', {
+        value: rm.reaction != null ? rm.reaction.toFixed(3) : (rm.phase === 'foul' ? 'FOUL' : '--'),
+        unit: rm.reaction != null ? 's' : '',
+        size: 64,
+        color: rm.phase === 'foul' ? '#e23b2f' : '#d4af37',
+    });
+    screens.set('raceTimer', {
+        value: (rm.elapsed || 0).toFixed(3),
+        unit: 's',
+        size: 120,
+        color: '#d4af37',
+    });
+    screens.set('raceSplits', { rows: splitTableRows(rm.result, rm.trap, {}) });
+    screens.set('raceStartBtn', {
+        text: 'Starta träd',
+        kind: 'primary',
+        disabled: !rm.canStart && rm.phase === 'idle',
+    });
     screens.set('raceAgainBtn', { text: 'Race again', kind: 'outline', disabled: false });
 
-    // Online stub
     screens.set('onlineNote', {
-        text: 'Online H2H kommer senare: rumkod, gemensam start, lokal tidtagning, uppladdning. Ingen server i 1.0.0.',
+        text: 'Online H2H kommer senare: rumkod, gemensam start, lokal tidtagning, uppladdning. Ingen server i denna version.',
     });
     screens.set('onlineCode', { text: 'Din kod (förberedd): ' + rm.code });
 
-    // Settings / QR
     screens.set('rolloutRow', { on: !!settings.rollout, label: '1-ft rollout', sub: 'Klocka startar efter 0,30 m' });
     screens.set('qrNote', { text: qrNote || (lastRun ? 'Tryck Visa QR för senaste körning' : 'Kör en drag först') });
     screens.set('shareUrl', { text: lastRun ? shareUrl() : '--' });
@@ -282,11 +306,9 @@ function onChange(name, o) {
         render();
         return;
     }
-    let from = name.replace(/Menu$/, '');
-    if (from === name) from = name.replace(/Tabs$/, '');
+    const from = name.replace(/Tabs$/, '');
     if (from === name || PAGES.indexOf(from) < 0) return;
     const to = PAGES[o.sel];
-    screens.set(`${from}Menu`, { sel: PAGES.indexOf(from), hideTabs: true });
     screens.set(`${from}Tabs`, { sel: PAGES.indexOf(from) });
     goTo(to);
 }
