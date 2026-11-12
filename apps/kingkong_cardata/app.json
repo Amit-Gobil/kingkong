@@ -1,0 +1,15 @@
+{
+ "id": "kingkong_cardata",
+ "version": "1.0.0",
+ "title": "Kingkong",
+ "description": "Kingkong Tuning live data for BMW iDrive 8 (M3 G81): rpm, boost, effekt, vridmoment, temps, battery; Fuel, Trips and Settings. Black and gold.",
+ "mguHmi": [
+  "ID8"
+ ],
+ "needs": [
+  "renderer"
+ ],
+ "requires": {
+  "mgu-deploy": "0.7.5"
+ }
+}
