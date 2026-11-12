@@ -1,8 +1,8 @@
 {
   "id": "kingkong_cardata",
-  "version": "1.2.7",
+  "version": "1.2.8",
   "title": "Kingkong",
-  "description": "Kingkong Quiet Dials 1.2.7: English-only UI. Power/Torque bar maxima 1500 hp / 1700 Nm. Trips/Details hidden. Ethanol, Send log.",
+  "description": "Kingkong Quiet Dials 1.2.8: Engine sport glance chips (FES boost / power % / torque %). English UI. Power/Torque maxima 1500 hp / 1700 Nm. Ethanol, Send log.",
   "mguHmi": [
     "ID8"
   ],
