@@ -38,9 +38,11 @@ function span(v) {           // a trace's scale: its lowest to highest value wit
 const pts = (v, d) => v.map((x) => +x.toFixed(d + 1));
 // polling paused (main.js: 30 min after the last tab tap, or hidden): every page's frame says so, as Engine's
 const PAUSED = () => ({ chips: [['Paused', 'warn']], sub: 'Paused · open a tab to resume' });
-function fuelView(series, now, paused) {
-    if (paused) { series = {}; now = {}; }       // no values from before the pause
+function fuelView(series, now, paused, ethanol) {
+    if (paused) { series = {}; now = {}; ethanol = null; }       // no values from before the pause
     const out = { fuelMenu: paused ? PAUSED() : { chips: [], sub: 'From the DME · each with its last 5 minutes' } };
+    // Always show etanol (UDS 550D) so G81 can be checked vs MHD even when the DME has not answered yet
+    out.ethanolFuel = { value: isNum(ethanol) ? ethanol : null, label: 'Etanol (UDS 550D)', unit: '%' };
     FUEL.forEach(([k, unit, d, what], i) => {
         const v = series[k] || [], s = span(v);
         out[`fuel${i}`] = { value: fx(now[k], d), unit, points: pts(v, d), lo: s.lo, hi: s.hi,
