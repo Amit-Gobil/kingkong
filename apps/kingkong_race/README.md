@@ -28,5 +28,5 @@ node tools/pack-race.js
 
 ## Install
 1. MGU Store → source `Amit-Gobil/kingkong` → branch **main**
-2. Install **KingKong Race** `1.0.1` (separate from Kingkong live-data)
+2. Install **KingKong Race** `1.0.2` (separate from Kingkong live-data)
 3. Restart HU if the tile does not appear
