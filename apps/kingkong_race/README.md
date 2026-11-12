@@ -28,9 +28,11 @@ node tools/pack-race.js
 
 ## Install
 1. MGU Store → source `Amit-Gobil/kingkong` → branch **main**
-2. Install **KingKong Race** `1.0.4` (separate from Kingkong live-data)
+2. Install **KingKong Race** `1.0.5` (separate from Kingkong live-data)
 3. Restart HU if the tile does not appear or an older Race build was installed
 
 `1.0.0`–`1.0.2` could install a tile but fail to open: SOME/IP `manifest.json` lacked OnlineApp lifecycle proxies (`OAPController`, `AppStatus`, NSM, …). `pack-race.js` now merges those in.
 
 `1.0.3` opened (title bar) but showed a blank blue content area: `renderer/screens.json` screens lacked `"kind": "gpu"`, so `ScreenApp._find` never opened the GPU layer. `1.0.4` patches that in `pack-race.js`.
+
+`1.0.4` opened GPU but still felt like live-data: Quiet Dials `teleShell` chrome and a text-row “tree”. **1.0.5** ships Race-owned `renderer/screens.json` (Drag timer/splits + visual christmas-tree `raceTree`, brand wordmark, bottom tabs at y≈748) and injects Race-only widgets at pack time. Cardata untouched; `prebuilt.js` stays a no-op.

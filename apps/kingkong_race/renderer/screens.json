@@ -1,0 +1,509 @@
+{
+  "design": { "w": 2880, "h": 960 },
+  "screens": [
+    {
+      "name": "drag",
+      "kind": "gpu",
+      "title": "Drag",
+      "entry": true,
+      "bg": "#050505",
+      "bgArea": "app",
+      "theme": "kingkong",
+      "components": [
+        {
+          "name": "dragBrand",
+          "rtype": "gpu",
+          "gpu": "raceBrand",
+          "x": 40,
+          "y": 90,
+          "w": 1100,
+          "h": 100,
+          "opts": { "title": "KINGKONG", "sub": "TUNING · DRAG", "align": "left" }
+        },
+        {
+          "name": "resetBtn",
+          "rtype": "gpu",
+          "gpu": "teleButton",
+          "x": 2320,
+          "y": 100,
+          "w": 280,
+          "h": 72,
+          "opts": { "text": "Reset", "kind": "outline" },
+          "onTap": "event:dragReset"
+        },
+        {
+          "name": "qrBtn",
+          "rtype": "gpu",
+          "gpu": "teleButton",
+          "x": 2000,
+          "y": 100,
+          "w": 280,
+          "h": 72,
+          "opts": { "text": "Visa QR", "kind": "quiet" },
+          "onTap": "event:dragQr"
+        },
+        {
+          "name": "statusText",
+          "rtype": "gpu",
+          "gpu": "text",
+          "x": 40,
+          "y": 210,
+          "w": 1600,
+          "h": 36,
+          "opts": {
+            "text": "STANNA BILEN",
+            "size": 28,
+            "font": "bold",
+            "spacing": 2,
+            "align": "left",
+            "color": "#d4af37"
+          }
+        },
+        {
+          "name": "timerVal",
+          "rtype": "gpu",
+          "gpu": "teleValue",
+          "x": 40,
+          "y": 250,
+          "w": 1200,
+          "h": 180,
+          "opts": { "value": "0.000", "unit": "s", "size": 140, "align": "left", "color": "#d4af37" }
+        },
+        {
+          "name": "speedVal",
+          "rtype": "gpu",
+          "gpu": "teleValue",
+          "x": 40,
+          "y": 440,
+          "w": 700,
+          "h": 90,
+          "opts": { "value": "0", "unit": "km/h", "size": 72, "align": "left" }
+        },
+        {
+          "name": "splitTable",
+          "rtype": "gpu",
+          "gpu": "teleTable",
+          "x": 1500,
+          "y": 210,
+          "w": 1340,
+          "h": 300,
+          "opts": {
+            "columns": "Split:2, Time:1.4:right, Speed:1.2:right",
+            "rows": "60 ft | -- | --\n0-100 | -- | --\n100-200 | -- | --\n201 m | -- | --",
+            "rowH": 68
+          }
+        },
+        {
+          "name": "bestHead",
+          "rtype": "gpu",
+          "gpu": "text",
+          "x": 1500,
+          "y": 530,
+          "w": 700,
+          "h": 32,
+          "opts": { "text": "BEST TIMES", "size": 24, "font": "bold", "spacing": 2, "align": "left", "color": "#d4af37" }
+        },
+        {
+          "name": "bestKv",
+          "rtype": "gpu",
+          "gpu": "teleKv",
+          "x": 1500,
+          "y": 570,
+          "w": 700,
+          "h": 150,
+          "opts": {
+            "rows": "60 ft|--\n0-100|--\n201 m|--",
+            "rowH": 48
+          }
+        },
+        {
+          "name": "peakHead",
+          "rtype": "gpu",
+          "gpu": "text",
+          "x": 2280,
+          "y": 530,
+          "w": 560,
+          "h": 32,
+          "opts": { "text": "PEAK G", "size": 24, "font": "bold", "spacing": 2, "align": "left", "color": "#d4af37" }
+        },
+        {
+          "name": "peakGText",
+          "rtype": "gpu",
+          "gpu": "text",
+          "x": 2280,
+          "y": 580,
+          "w": 560,
+          "h": 60,
+          "opts": { "text": "-- g", "size": 48, "font": "num", "align": "left", "color": "#f5ecd2" }
+        },
+        {
+          "name": "dragTabs",
+          "rtype": "gpu",
+          "gpu": "teleTabBar",
+          "x": 0,
+          "y": 748,
+          "w": 2880,
+          "h": 80,
+          "opts": { "tabs": "Drag, Race, Online, Settings", "sel": 0 }
+        }
+      ]
+    },
+    {
+      "name": "race",
+      "kind": "gpu",
+      "title": "Race",
+      "entry": false,
+      "bg": "#050505",
+      "bgArea": "app",
+      "theme": "kingkong",
+      "components": [
+        {
+          "name": "raceBrand",
+          "rtype": "gpu",
+          "gpu": "raceBrand",
+          "x": 840,
+          "y": 90,
+          "w": 1200,
+          "h": 100,
+          "opts": { "title": "KINGKONG", "sub": "TUNING · RACE TREE", "align": "center" }
+        },
+        {
+          "name": "raceTree",
+          "rtype": "gpu",
+          "gpu": "raceTree",
+          "x": 80,
+          "y": 200,
+          "w": 280,
+          "h": 500,
+          "opts": { "amber": "0,0,0", "green": false, "foul": false, "staged": true }
+        },
+        {
+          "name": "racePhase",
+          "rtype": "gpu",
+          "gpu": "text",
+          "x": 420,
+          "y": 230,
+          "w": 900,
+          "h": 48,
+          "opts": {
+            "text": "GET READY",
+            "size": 40,
+            "font": "bold",
+            "spacing": 3,
+            "align": "left",
+            "color": "#d4af37"
+          }
+        },
+        {
+          "name": "raceCue",
+          "rtype": "gpu",
+          "gpu": "text",
+          "x": 420,
+          "y": 290,
+          "w": 900,
+          "h": 40,
+          "opts": { "text": "0.00s", "size": 32, "font": "num", "align": "left", "color": "#f5ecd2" }
+        },
+        {
+          "name": "raceTimer",
+          "rtype": "gpu",
+          "gpu": "teleValue",
+          "x": 1100,
+          "y": 280,
+          "w": 900,
+          "h": 160,
+          "opts": { "value": "0.000", "unit": "s", "size": 120, "align": "left", "color": "#d4af37" }
+        },
+        {
+          "name": "raceTimerLabel",
+          "rtype": "gpu",
+          "gpu": "text",
+          "x": 1100,
+          "y": 450,
+          "w": 900,
+          "h": 32,
+          "opts": { "text": "LIVE TIMER", "size": 24, "font": "bold", "spacing": 2, "align": "left", "color": "#9a8f72" }
+        },
+        {
+          "name": "raceReaction",
+          "rtype": "gpu",
+          "gpu": "teleValue",
+          "x": 2100,
+          "y": 300,
+          "w": 700,
+          "h": 100,
+          "opts": { "value": "--", "unit": "s", "size": 64, "align": "left", "color": "#d4af37" }
+        },
+        {
+          "name": "raceReactionLabel",
+          "rtype": "gpu",
+          "gpu": "text",
+          "x": 2100,
+          "y": 420,
+          "w": 700,
+          "h": 32,
+          "opts": { "text": "REACTION TIME", "size": 24, "font": "bold", "spacing": 2, "align": "left", "color": "#9a8f72" }
+        },
+        {
+          "name": "raceCode",
+          "rtype": "gpu",
+          "gpu": "text",
+          "x": 420,
+          "y": 360,
+          "w": 900,
+          "h": 32,
+          "opts": { "text": "Solo practice", "size": 24, "font": "label", "align": "left", "color": "#9a8f72" }
+        },
+        {
+          "name": "raceSplits",
+          "rtype": "gpu",
+          "gpu": "teleTable",
+          "x": 420,
+          "y": 480,
+          "w": 1600,
+          "h": 140,
+          "opts": {
+            "columns": "Split:2, Time:1.4:right, Speed:1.2:right",
+            "rows": "60 ft | -- | --\n0-100 | -- | --\n201 m | -- | --",
+            "rowH": 44
+          }
+        },
+        {
+          "name": "raceStartBtn",
+          "rtype": "gpu",
+          "gpu": "teleButton",
+          "x": 2100,
+          "y": 520,
+          "w": 340,
+          "h": 80,
+          "opts": { "text": "Starta träd", "kind": "primary" },
+          "onTap": "event:raceStart"
+        },
+        {
+          "name": "raceAgainBtn",
+          "rtype": "gpu",
+          "gpu": "teleButton",
+          "x": 2460,
+          "y": 520,
+          "w": 340,
+          "h": 80,
+          "opts": { "text": "Race again", "kind": "outline" },
+          "onTap": "event:raceAgain"
+        },
+        {
+          "name": "raceTabs",
+          "rtype": "gpu",
+          "gpu": "teleTabBar",
+          "x": 0,
+          "y": 748,
+          "w": 2880,
+          "h": 80,
+          "opts": { "tabs": "Drag, Race, Online, Settings", "sel": 1 }
+        }
+      ]
+    },
+    {
+      "name": "online",
+      "kind": "gpu",
+      "title": "Online",
+      "entry": false,
+      "bg": "#050505",
+      "bgArea": "app",
+      "theme": "kingkong",
+      "components": [
+        {
+          "name": "onlineBrand",
+          "rtype": "gpu",
+          "gpu": "raceBrand",
+          "x": 40,
+          "y": 90,
+          "w": 1100,
+          "h": 100,
+          "opts": { "title": "KINGKONG", "sub": "TUNING · ONLINE", "align": "left" }
+        },
+        {
+          "name": "onlineHead",
+          "rtype": "gpu",
+          "gpu": "text",
+          "x": 40,
+          "y": 240,
+          "w": 2000,
+          "h": 48,
+          "opts": { "text": "ONLINE H2H", "size": 40, "font": "bold", "spacing": 3, "align": "left", "color": "#d4af37" }
+        },
+        {
+          "name": "onlineNote",
+          "rtype": "gpu",
+          "gpu": "text",
+          "x": 40,
+          "y": 320,
+          "w": 2600,
+          "h": 120,
+          "opts": {
+            "text": "Kommer senare: rumkod, gemensam start, lokal tidtagning, uppladdning. Ingen server i denna version.",
+            "size": 28,
+            "font": "label",
+            "align": "left",
+            "color": "#f5ecd2",
+            "wrap": true
+          }
+        },
+        {
+          "name": "onlineCode",
+          "rtype": "gpu",
+          "gpu": "text",
+          "x": 40,
+          "y": 460,
+          "w": 2000,
+          "h": 40,
+          "opts": { "text": "Din kod (förberedd): ----", "size": 28, "font": "num", "align": "left", "color": "#9a8f72" }
+        },
+        {
+          "name": "onlineTabs",
+          "rtype": "gpu",
+          "gpu": "teleTabBar",
+          "x": 0,
+          "y": 748,
+          "w": 2880,
+          "h": 80,
+          "opts": { "tabs": "Drag, Race, Online, Settings", "sel": 2 }
+        }
+      ]
+    },
+    {
+      "name": "settings",
+      "kind": "gpu",
+      "title": "Settings",
+      "entry": false,
+      "bg": "#050505",
+      "bgArea": "app",
+      "theme": "kingkong",
+      "components": [
+        {
+          "name": "settingsBrand",
+          "rtype": "gpu",
+          "gpu": "raceBrand",
+          "x": 40,
+          "y": 90,
+          "w": 1100,
+          "h": 100,
+          "opts": { "title": "KINGKONG", "sub": "TUNING · SETTINGS", "align": "left" }
+        },
+        {
+          "name": "setHead",
+          "rtype": "gpu",
+          "gpu": "text",
+          "x": 40,
+          "y": 220,
+          "w": 1200,
+          "h": 36,
+          "opts": { "text": "TIMER", "size": 28, "font": "bold", "spacing": 2, "align": "left", "color": "#d4af37" }
+        },
+        {
+          "name": "rolloutRow",
+          "rtype": "gpu",
+          "gpu": "teleRow",
+          "x": 40,
+          "y": 270,
+          "w": 1400,
+          "h": 104,
+          "opts": {
+            "label": "1-ft rollout",
+            "sub": "Klocka startar efter 0,30 m",
+            "control": "toggle",
+            "on": false
+          }
+        },
+        {
+          "name": "clearBtn",
+          "rtype": "gpu",
+          "gpu": "teleButton",
+          "x": 40,
+          "y": 400,
+          "w": 500,
+          "h": 80,
+          "opts": { "text": "Rensa bests", "kind": "dangerOutline" },
+          "onTap": "event:clearBests"
+        },
+        {
+          "name": "qrHead",
+          "rtype": "gpu",
+          "gpu": "text",
+          "x": 1600,
+          "y": 220,
+          "w": 1200,
+          "h": 36,
+          "opts": { "text": "DELA", "size": 28, "font": "bold", "spacing": 2, "align": "left", "color": "#d4af37" }
+        },
+        {
+          "name": "qrNote",
+          "rtype": "gpu",
+          "gpu": "text",
+          "x": 1600,
+          "y": 270,
+          "w": 1200,
+          "h": 40,
+          "opts": { "text": "Kör en drag först", "size": 26, "font": "label", "align": "left", "color": "#9a8f72" }
+        },
+        {
+          "name": "shareUrl",
+          "rtype": "gpu",
+          "gpu": "text",
+          "x": 1600,
+          "y": 320,
+          "w": 1200,
+          "h": 36,
+          "opts": { "text": "--", "size": 22, "font": "label", "align": "left", "color": "#5a5340" }
+        },
+        {
+          "name": "qrImage",
+          "rtype": "gpu",
+          "gpu": "image",
+          "x": 1600,
+          "y": 370,
+          "w": 280,
+          "h": 280,
+          "opts": { "src": "key:qrImage" }
+        },
+        {
+          "name": "qrCloseBtn",
+          "rtype": "gpu",
+          "gpu": "teleButton",
+          "x": 1920,
+          "y": 370,
+          "w": 280,
+          "h": 72,
+          "opts": { "text": "Stäng QR", "kind": "outline" },
+          "onTap": "event:qrClose"
+        },
+        {
+          "name": "about",
+          "rtype": "gpu",
+          "gpu": "text",
+          "x": 40,
+          "y": 560,
+          "w": 2000,
+          "h": 80,
+          "opts": {
+            "text": "KingKong Race — speed + optional g only. No DME. Closed-course use.",
+            "size": 24,
+            "font": "label",
+            "align": "left",
+            "color": "#5a5340",
+            "wrap": true
+          }
+        },
+        {
+          "name": "settingsTabs",
+          "rtype": "gpu",
+          "gpu": "teleTabBar",
+          "x": 0,
+          "y": 748,
+          "w": 2880,
+          "h": 80,
+          "opts": { "tabs": "Drag, Race, Online, Settings", "sel": 3 }
+        }
+      ]
+    }
+  ]
+}
