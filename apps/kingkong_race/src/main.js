@@ -270,13 +270,13 @@ function render() {
         foul: rm.phase === 'foul',
         staged: lights.staged !== false,
     });
-    screens.set('racePhase', { text: racePhaseText(rm) });
+    screens.set('racePhase', { text: racePhaseText(rm), align: 'left', size: 36 });
     screens.set('raceCountdown', {
         text: raceCountdownText(rm),
-        size: 160,
+        size: 180,
         font: 'bold',
         spacing: 4,
-        align: 'center',
+        align: 'left',
         color: raceCountdownColor(rm),
     });
     screens.set('raceCode', { text: 'Room ' + (rm.code || '----') + ' · solo practice' });
