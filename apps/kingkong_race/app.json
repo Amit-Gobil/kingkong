@@ -1,15 +1,15 @@
 {
- "id": "kingkong_race",
- "version": "1.0.0",
- "title": "KingKong Race",
- "description": "Drag timer and christmas-tree race practice for iDrive 8. Speed and optional g only \u2014 never talks to the DME.",
- "mguHmi": [
-  "ID8"
- ],
- "needs": [
-  "renderer"
- ],
- "requires": {
-  "mgu-deploy": "0.7.5"
- }
+  "id": "kingkong_race",
+  "version": "1.0.1",
+  "title": "KingKong Race",
+  "description": "Drag timer and christmas-tree race practice for iDrive 8. Speed and optional g only — never talks to the DME.",
+  "mguHmi": [
+    "ID8"
+  ],
+  "needs": [
+    "renderer"
+  ],
+  "requires": {
+    "mgu-deploy": "0.7.5"
+  }
 }
