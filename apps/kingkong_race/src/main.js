@@ -17,8 +17,10 @@ const qrcodegen = require('./qrcodegen.js');
 
 const LOG = '[kingkong_race]';
 const PAGES = ['drag', 'race', 'online', 'settings'];
-const RENDERER = path.join(__dirname, '..', 'renderer');
-const DATA_DIR = path.join(__dirname, '..', '..', 'data');
+// Linked bundle is javascript/app.js (or src/main.js): package root is one up — same as cardata.
+const SOURCE = typeof __dirname === 'string' ? path.join(__dirname, '..') : `/var/opt/public/oap/oap_${process.getuid()}/source`;
+const RENDERER = path.join(SOURCE, 'renderer');
+const DATA_DIR = path.join(SOURCE, '..', 'data');
 const BEST_FILE = path.join(DATA_DIR, 'kingkong_race_best.json');
 const SETTINGS_FILE = path.join(DATA_DIR, 'kingkong_race_settings.json');
 const SHARE_URL = 'https://inspect.kingkongtuning.se/car-time';
@@ -335,16 +337,21 @@ createHost({
     states: PAGES,
     log,
     onReady: (rhmiApp, hosts) => {
-        runtime = (rel) => require(path.join(RENDERER, rel));
-        startScreens(rhmiApp, hosts);
-        startBus();
-        setInterval(() => {
-            if (Date.now() > activeUntil) return;
-            const t = mono();
-            timer.idle(t);
-            race.tick(t);
-        }, TICK_MS);
-        setInterval(() => { if (Date.now() <= activeUntil) render(); }, RENDER_MS);
+        try {
+            runtime = (rel) => require(path.join(RENDERER, rel));
+            startScreens(rhmiApp, hosts);
+            startBus();
+            setInterval(() => {
+                if (Date.now() > activeUntil) return;
+                const t = mono();
+                timer.idle(t);
+                race.tick(t);
+            }, TICK_MS);
+            setInterval(() => { if (Date.now() <= activeUntil) render(); }, RENDER_MS);
+        } catch (e) {
+            log('onReady failed: ' + errText(e));
+            throw e;
+        }
     },
     onHidden: () => { activeUntil = 0; },
 });
