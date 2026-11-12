@@ -202,10 +202,10 @@ function racePhaseText(m) {
     if (m.phase === 'idle') return m.canStart ? 'TAP START TREE' : 'STOP THE CAR';
     if (m.phase === 'ready') return 'GET READY';
     if (m.phase === 'count') return 'WATCH THE TREE';
-    if (m.phase === 'armed') return 'GO!';
+    if (m.phase === 'armed') return 'ARMED';
     if (m.phase === 'run') return 'RUN';
-    if (m.phase === 'foul') return 'FOUL — EARLY';
-    if (m.phase === 'result') return 'RESULT';
+    if (m.phase === 'foul') return 'FOUL';
+    if (m.phase === 'result') return 'DONE';
     return String(m.phase || '').toUpperCase();
 }
 
@@ -270,29 +270,27 @@ function render() {
         foul: rm.phase === 'foul',
         staged: lights.staged !== false,
     });
-    screens.set('racePhase', { text: racePhaseText(rm), align: 'left', size: 36 });
+    screens.set('racePhase', { text: racePhaseText(rm), align: 'left', size: 26 });
     screens.set('raceCountdown', {
         text: raceCountdownText(rm),
-        size: 180,
+        size: 320,
         font: 'bold',
-        spacing: 4,
+        spacing: 8,
         align: 'left',
         color: raceCountdownColor(rm),
     });
-    screens.set('raceCode', { text: 'Room ' + (rm.code || '----') + ' · solo practice' });
     screens.set('raceReaction', {
         value: rm.reaction != null ? rm.reaction.toFixed(3) : (rm.phase === 'foul' ? 'FOUL' : '--'),
         unit: rm.reaction != null ? 's' : '',
-        size: 72,
+        size: 52,
         color: rm.phase === 'foul' ? '#e23b2f' : '#d4af37',
     });
     screens.set('raceTimer', {
         value: (rm.elapsed || 0).toFixed(3),
         unit: 's',
-        size: 72,
+        size: 52,
         color: '#d4af37',
     });
-    screens.set('raceSplits', { rows: splitTableRows(rm.result, rm.trap, {}) });
     screens.set('raceStartBtn', {
         text: 'Start tree',
         kind: 'primary',
