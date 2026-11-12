@@ -1,5 +1,8 @@
 {
-  "design": { "w": 2880, "h": 960 },
+  "design": {
+    "w": 2880,
+    "h": 960
+  },
   "screens": [
     {
       "name": "drag",
@@ -17,8 +20,13 @@
           "x": 40,
           "y": 90,
           "w": 1100,
-          "h": 100,
-          "opts": { "title": "KINGKONG", "sub": "TUNING · DRAG", "align": "left" }
+          "h": 120,
+          "opts": {
+            "title": "KINGKONG",
+            "sub": "TUNING \u00b7 DRAG",
+            "align": "left",
+            "logo": true
+          }
         },
         {
           "name": "resetBtn",
@@ -28,7 +36,10 @@
           "y": 100,
           "w": 280,
           "h": 72,
-          "opts": { "text": "Reset", "kind": "outline" },
+          "opts": {
+            "text": "Reset",
+            "kind": "outline"
+          },
           "onTap": "event:dragReset"
         },
         {
@@ -39,7 +50,10 @@
           "y": 100,
           "w": 280,
           "h": 72,
-          "opts": { "text": "Show QR", "kind": "quiet" },
+          "opts": {
+            "text": "Show QR",
+            "kind": "quiet"
+          },
           "onTap": "event:dragQr"
         },
         {
@@ -67,7 +81,13 @@
           "y": 250,
           "w": 1200,
           "h": 180,
-          "opts": { "value": "0.000", "unit": "s", "size": 140, "align": "left", "color": "#d4af37" }
+          "opts": {
+            "value": "0.000",
+            "unit": "s",
+            "size": 140,
+            "align": "left",
+            "color": "#d4af37"
+          }
         },
         {
           "name": "speedVal",
@@ -77,7 +97,12 @@
           "y": 440,
           "w": 700,
           "h": 90,
-          "opts": { "value": "0", "unit": "km/h", "size": 72, "align": "left" }
+          "opts": {
+            "value": "0",
+            "unit": "km/h",
+            "size": 72,
+            "align": "left"
+          }
         },
         {
           "name": "splitTable",
@@ -101,7 +126,14 @@
           "y": 530,
           "w": 700,
           "h": 32,
-          "opts": { "text": "BEST TIMES", "size": 24, "font": "bold", "spacing": 2, "align": "left", "color": "#d4af37" }
+          "opts": {
+            "text": "BEST TIMES",
+            "size": 24,
+            "font": "bold",
+            "spacing": 2,
+            "align": "left",
+            "color": "#d4af37"
+          }
         },
         {
           "name": "bestKv",
@@ -124,7 +156,14 @@
           "y": 530,
           "w": 560,
           "h": 32,
-          "opts": { "text": "PEAK G", "size": 24, "font": "bold", "spacing": 2, "align": "left", "color": "#d4af37" }
+          "opts": {
+            "text": "PEAK G",
+            "size": 24,
+            "font": "bold",
+            "spacing": 2,
+            "align": "left",
+            "color": "#d4af37"
+          }
         },
         {
           "name": "peakGText",
@@ -134,7 +173,13 @@
           "y": 580,
           "w": 560,
           "h": 60,
-          "opts": { "text": "-- g", "size": 48, "font": "num", "align": "left", "color": "#f5ecd2" }
+          "opts": {
+            "text": "-- g",
+            "size": 48,
+            "font": "num",
+            "align": "left",
+            "color": "#f5ecd2"
+          }
         },
         {
           "name": "dragTabs",
@@ -144,7 +189,10 @@
           "y": 748,
           "w": 2880,
           "h": 80,
-          "opts": { "tabs": "Drag, Race, Online, Settings", "sel": 0 }
+          "opts": {
+            "tabs": "Drag, Race, Online, Settings",
+            "sel": 0
+          }
         }
       ]
     },
@@ -164,8 +212,13 @@
           "x": 840,
           "y": 70,
           "w": 1200,
-          "h": 80,
-          "opts": { "title": "KINGKONG", "sub": "TUNING · RACE TREE", "align": "center" }
+          "h": 120,
+          "opts": {
+            "title": "KINGKONG",
+            "sub": "TUNING \u00b7 RACE TREE",
+            "align": "center",
+            "logo": true
+          }
         },
         {
           "name": "raceCountdown",
@@ -209,7 +262,12 @@
           "y": 340,
           "w": 640,
           "h": 380,
-          "opts": { "amber": "0,0,0", "green": false, "foul": false, "staged": true }
+          "opts": {
+            "amber": "0,0,0",
+            "green": false,
+            "foul": false,
+            "staged": true
+          }
         },
         {
           "name": "raceReaction",
@@ -219,7 +277,13 @@
           "y": 360,
           "w": 900,
           "h": 120,
-          "opts": { "value": "--", "unit": "s", "size": 72, "align": "left", "color": "#d4af37" }
+          "opts": {
+            "value": "--",
+            "unit": "s",
+            "size": 72,
+            "align": "left",
+            "color": "#d4af37"
+          }
         },
         {
           "name": "raceReactionLabel",
@@ -229,7 +293,14 @@
           "y": 490,
           "w": 900,
           "h": 32,
-          "opts": { "text": "REACTION", "size": 26, "font": "bold", "spacing": 2, "align": "left", "color": "#9a8f72" }
+          "opts": {
+            "text": "REACTION",
+            "size": 26,
+            "font": "bold",
+            "spacing": 2,
+            "align": "left",
+            "color": "#9a8f72"
+          }
         },
         {
           "name": "raceTimer",
@@ -239,7 +310,13 @@
           "y": 360,
           "w": 900,
           "h": 120,
-          "opts": { "value": "0.000", "unit": "s", "size": 72, "align": "right", "color": "#d4af37" }
+          "opts": {
+            "value": "0.000",
+            "unit": "s",
+            "size": 72,
+            "align": "right",
+            "color": "#d4af37"
+          }
         },
         {
           "name": "raceTimerLabel",
@@ -249,7 +326,14 @@
           "y": 490,
           "w": 900,
           "h": 32,
-          "opts": { "text": "LIVE TIMER", "size": 26, "font": "bold", "spacing": 2, "align": "right", "color": "#9a8f72" }
+          "opts": {
+            "text": "LIVE TIMER",
+            "size": 26,
+            "font": "bold",
+            "spacing": 2,
+            "align": "right",
+            "color": "#9a8f72"
+          }
         },
         {
           "name": "raceCode",
@@ -259,7 +343,13 @@
           "y": 680,
           "w": 1600,
           "h": 28,
-          "opts": { "text": "Solo practice", "size": 22, "font": "label", "align": "center", "color": "#9a8f72" }
+          "opts": {
+            "text": "Solo practice",
+            "size": 22,
+            "font": "label",
+            "align": "center",
+            "color": "#9a8f72"
+          }
         },
         {
           "name": "raceSplits",
@@ -283,7 +373,10 @@
           "y": 560,
           "w": 400,
           "h": 88,
-          "opts": { "text": "Start tree", "kind": "primary" },
+          "opts": {
+            "text": "Start tree",
+            "kind": "primary"
+          },
           "onTap": "event:raceStart"
         },
         {
@@ -294,7 +387,10 @@
           "y": 560,
           "w": 400,
           "h": 88,
-          "opts": { "text": "Race again", "kind": "outline" },
+          "opts": {
+            "text": "Race again",
+            "kind": "outline"
+          },
           "onTap": "event:raceAgain"
         },
         {
@@ -305,7 +401,10 @@
           "y": 748,
           "w": 2880,
           "h": 80,
-          "opts": { "tabs": "Drag, Race, Online, Settings", "sel": 1 }
+          "opts": {
+            "tabs": "Drag, Race, Online, Settings",
+            "sel": 1
+          }
         }
       ]
     },
@@ -325,8 +424,13 @@
           "x": 40,
           "y": 90,
           "w": 1100,
-          "h": 100,
-          "opts": { "title": "KINGKONG", "sub": "TUNING · ONLINE", "align": "left" }
+          "h": 120,
+          "opts": {
+            "title": "KINGKONG",
+            "sub": "TUNING \u00b7 ONLINE",
+            "align": "left",
+            "logo": true
+          }
         },
         {
           "name": "onlineHead",
@@ -336,7 +440,14 @@
           "y": 240,
           "w": 2000,
           "h": 48,
-          "opts": { "text": "ONLINE H2H", "size": 40, "font": "bold", "spacing": 3, "align": "left", "color": "#d4af37" }
+          "opts": {
+            "text": "ONLINE H2H",
+            "size": 40,
+            "font": "bold",
+            "spacing": 3,
+            "align": "left",
+            "color": "#d4af37"
+          }
         },
         {
           "name": "onlineNote",
@@ -363,7 +474,13 @@
           "y": 460,
           "w": 2000,
           "h": 40,
-          "opts": { "text": "Your code (prepared): ----", "size": 28, "font": "num", "align": "left", "color": "#9a8f72" }
+          "opts": {
+            "text": "Your code (prepared): ----",
+            "size": 28,
+            "font": "num",
+            "align": "left",
+            "color": "#9a8f72"
+          }
         },
         {
           "name": "onlineTabs",
@@ -373,7 +490,10 @@
           "y": 748,
           "w": 2880,
           "h": 80,
-          "opts": { "tabs": "Drag, Race, Online, Settings", "sel": 2 }
+          "opts": {
+            "tabs": "Drag, Race, Online, Settings",
+            "sel": 2
+          }
         }
       ]
     },
@@ -393,8 +513,13 @@
           "x": 40,
           "y": 90,
           "w": 1100,
-          "h": 100,
-          "opts": { "title": "KINGKONG", "sub": "TUNING · SETTINGS", "align": "left" }
+          "h": 120,
+          "opts": {
+            "title": "KINGKONG",
+            "sub": "TUNING \u00b7 SETTINGS",
+            "align": "left",
+            "logo": true
+          }
         },
         {
           "name": "setHead",
@@ -404,7 +529,14 @@
           "y": 220,
           "w": 1200,
           "h": 36,
-          "opts": { "text": "TIMER", "size": 28, "font": "bold", "spacing": 2, "align": "left", "color": "#d4af37" }
+          "opts": {
+            "text": "TIMER",
+            "size": 28,
+            "font": "bold",
+            "spacing": 2,
+            "align": "left",
+            "color": "#d4af37"
+          }
         },
         {
           "name": "rolloutRow",
@@ -429,7 +561,10 @@
           "y": 400,
           "w": 500,
           "h": 80,
-          "opts": { "text": "Clear bests", "kind": "dangerOutline" },
+          "opts": {
+            "text": "Clear bests",
+            "kind": "dangerOutline"
+          },
           "onTap": "event:clearBests"
         },
         {
@@ -440,7 +575,14 @@
           "y": 220,
           "w": 1200,
           "h": 36,
-          "opts": { "text": "SHARE", "size": 28, "font": "bold", "spacing": 2, "align": "left", "color": "#d4af37" }
+          "opts": {
+            "text": "SHARE",
+            "size": 28,
+            "font": "bold",
+            "spacing": 2,
+            "align": "left",
+            "color": "#d4af37"
+          }
         },
         {
           "name": "qrNote",
@@ -450,7 +592,13 @@
           "y": 270,
           "w": 1200,
           "h": 40,
-          "opts": { "text": "Run a drag first", "size": 26, "font": "label", "align": "left", "color": "#9a8f72" }
+          "opts": {
+            "text": "Run a drag first",
+            "size": 26,
+            "font": "label",
+            "align": "left",
+            "color": "#9a8f72"
+          }
         },
         {
           "name": "shareUrl",
@@ -460,7 +608,13 @@
           "y": 320,
           "w": 1200,
           "h": 36,
-          "opts": { "text": "--", "size": 22, "font": "label", "align": "left", "color": "#5a5340" }
+          "opts": {
+            "text": "--",
+            "size": 22,
+            "font": "label",
+            "align": "left",
+            "color": "#5a5340"
+          }
         },
         {
           "name": "qrImage",
@@ -470,7 +624,9 @@
           "y": 370,
           "w": 280,
           "h": 280,
-          "opts": { "src": "key:qrImage" }
+          "opts": {
+            "src": "key:qrImage"
+          }
         },
         {
           "name": "qrCloseBtn",
@@ -480,7 +636,10 @@
           "y": 370,
           "w": 280,
           "h": 72,
-          "opts": { "text": "Close QR", "kind": "outline" },
+          "opts": {
+            "text": "Close QR",
+            "kind": "outline"
+          },
           "onTap": "event:qrClose"
         },
         {
@@ -492,7 +651,7 @@
           "w": 2000,
           "h": 80,
           "opts": {
-            "text": "KingKong Race — speed + optional g only. No DME. Closed-course use.",
+            "text": "KingKong Race \u2014 speed + optional g only. No DME. Closed-course use.",
             "size": 24,
             "font": "label",
             "align": "left",
@@ -508,7 +667,10 @@
           "y": 748,
           "w": 2880,
           "h": 80,
-          "opts": { "tabs": "Drag, Race, Online, Settings", "sel": 3 }
+          "opts": {
+            "tabs": "Drag, Race, Online, Settings",
+            "sel": 3
+          }
         }
       ]
     }

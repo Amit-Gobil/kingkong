@@ -177,6 +177,9 @@ const rendererDir = path.join(pkgDir, 'renderer');
 if (!fs.existsSync(rendererDir)) die('renderer/ missing in package');
 fs.copyFileSync(screensSrc, path.join(rendererDir, 'screens.json'));
 fs.copyFileSync(raceWidgetsSrc, path.join(rendererDir, 'race-widgets.js'));
+const logoSrc = path.join(APP, 'renderer', 'logo.png');
+if (!fs.existsSync(logoSrc)) die('apps/kingkong_race/renderer/logo.png missing (official Kingkong logo)');
+fs.copyFileSync(logoSrc, path.join(rendererDir, 'logo.png'));
 
 const telePath = path.join(rendererDir, 'tele-widgets.js');
 let teleSrc = fs.readFileSync(telePath, 'utf8');
