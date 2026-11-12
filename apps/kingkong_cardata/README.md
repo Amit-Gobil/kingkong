@@ -2,7 +2,7 @@
 
 iDrive 8 live data for Kingkong Tuning (M3 G81). Quiet Dials skin, bottom tabs, ethanol %, Send log. **English-only UI.**
 
-- **Engine** — Quiet Dials RPM/Boost, power, torque, temps, battery, ethanol as `Ethanol XX %` / `Ethanol -- %` (Fuel+Engine); probes 5939/5938/550D/F452/593A; Settings ethDebug; LPFP UDS fallback  
+- **Engine** — Quiet Dials RPM/Boost, power, torque, temps, battery, ethanol; **sport glance chips** (FES boost / power % / torque %, black/gold); probes 5939/5938/550D/F452/593A; Settings ethDebug; LPFP UDS fallback  
 - **Fuel** — intake / fuel pressures / timing / boost with 5‑minute traces + ethanol % (same sources)  
 - **Transmission** — ZF 8HP read-only (experimental)  
 - **Adjust** — MHD maps 1–4, Max Cooling, exhaust flap (Iterio Live Adjustments logic; Quiet Dials UI)  

@@ -201,6 +201,11 @@ const V = {
         return V.fesBoost();
     },
     fesBoost: () => (valid(raw.sportBoost, 255) ? CAL.fesBoostBar(raw.sportBoost) : undefined),
+    // FES Sport display % (cluster family); separate from OBD torquePct in o[]
+    sportPowerPct: () => (busFresh('FES.statusVehicleDynamicEngine') && valid(raw.powerPct, 255)
+        ? raw.powerPct : undefined),
+    sportTorquePct: () => (busFresh('FES.statusVehicleDynamicEngine') && valid(raw.torquePct, 255)
+        ? raw.torquePct : undefined),
     torque: () => (busFresh('FES.statusActualValueTorque2') && valid(raw.torque, 65535) ? CAL.torqueNm(raw.torque)
         : obdVal('torquePct') !== undefined && obdVal('refTorque') ? obdVal('torquePct') * obdVal('refTorque') / 100 : undefined),
     power: () => (V.torque() !== undefined && V.rpm() !== undefined ? V.torque() * V.rpm() / 9549.3 : undefined),   // kW
@@ -537,6 +542,17 @@ function peak(k, v) {
 }
 const LABEL = { rpm: ['RPM', 0], boost: ['Boost', 2], hp: ['Power', 0], nm: ['Torque', 0] };
 const withPeak = (k) => (peaks[k] === undefined ? LABEL[k][0] : `${LABEL[k][0]} · peak ${peaks[k].toFixed(LABEL[k][1])}`);
+/** Quiet Dials black/gold glance chips: FES sport boost + power % + torque % (CID Engine shell). */
+function sportGlanceChips() {
+    const b = V.fesBoost();
+    const pp = V.sportPowerPct();
+    const tp = V.sportTorquePct();
+    return [
+        [`Boost ${b === undefined ? '--' : b.toFixed(2)}`, 'accent'],
+        [`Power ${pp === undefined ? '--' : Math.round(pp)}%`, 'accent'],
+        [`Torque ${tp === undefined ? '--' : Math.round(tp)}%`, 'accent'],
+    ];
+}
 // "D3" in D with a known gear (the reference design), else the gear / selector as gearText gives it
 function gearShown() {
     const g = gearText();
@@ -770,7 +786,8 @@ function render() {
         .set('speed', { value: kmh === undefined ? '--' : String(kmh), color: kmh === undefined ? 'dim' : '' })
         .set('gear', { text: gearShown(), color: rpm === undefined ? '#4a4f57' : '#ffb020' })
         .set('engineMenu', Date.now() > activeUntil ? { chips: [['Paused', 'warn']], sub: 'Paused · open a tab to resume' }
-            : rpm === undefined ? { chips: [['DME not answering', 'crit']], sub: 'Waiting for the DME' } : { chips: [], sub: 'Quiet Dials · live' })
+            : rpm === undefined ? { chips: [['DME not answering', 'crit']], sub: 'Waiting for the DME' }
+                : { chips: sportGlanceChips(), sub: 'Quiet Dials · sport' })
         .set('oilBar', { value: rnd(V.oil()), max: ends.oil })
         .set('coolantBar', { value: rnd(V.coolant()), max: ends.coolant })
         .set('intakeBar', { value: rnd(V.iat()), max: ends.intake })

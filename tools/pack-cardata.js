@@ -134,6 +134,11 @@ for (const s of design.screens) {
       c.opts.app = 'Kingkong';
       c.opts.credit = 'Kingkong Tuning';
     }
+    // Engine shell: static preview of FES sport glance chips (runtime overwrites via main.js).
+    if (s.name === 'engine' && c.name === 'engineMenu' && c.opts) {
+      c.opts.chips = 'Boost 1.12|accent; Power 45%|accent; Torque 62%|accent';
+      c.opts.sub = 'Quiet Dials · sport';
+    }
     if (c.opts) {
       ['label', 'text', 'rows', 'sub', 'foot', 'caption'].forEach((k) => {
         if (typeof c.opts[k] === 'string') c.opts[k] = enify(c.opts[k]);
@@ -194,7 +199,7 @@ for (const p of stringFiles) {
 
 // ---- package metadata ----
 const DESC =
-  'Kingkong Quiet Dials 1.2.7: English-only UI. Power/Torque bar maxima 1500 hp / 1700 Nm. Trips/Details hidden. Ethanol, Send log.';
+  'Kingkong Quiet Dials 1.2.8: Engine sport glance chips (FES boost / power % / torque %). English UI. Power/Torque maxima 1500 hp / 1700 Nm. Ethanol, Send log.';
 const pkg = readJson(path.join(tree, 'package.json'));
 pkg.name = 'kingkong_cardata';
 pkg.version = version;
@@ -203,7 +208,7 @@ pkg.productName = 'Kingkong';
 pkg.author = 'Kingkong Tuning';
 pkg.store = {
   description:
-    'Kingkong Tuning Quiet Dials for BMW iDrive 8: Engine / Fuel / Transmission / Adjust / Settings. MHD Adjust, ethanol, Send log. Black and gold. English UI. Tabs above ID8 chrome.',
+    'Kingkong Tuning Quiet Dials for BMW iDrive 8: Engine sport glance chips (boost / power% / torque%), Fuel, Transmission, Adjust, Settings. MHD Adjust, ethanol, Send log. Black and gold. English UI.',
 };
 writeJson(path.join(tree, 'package.json'), pkg);
 writeJson(path.join(tree, 'npm-shrinkwrap.json'), {
@@ -308,6 +313,15 @@ if (!/SHOW_TRIPS_DETAILS\s*=\s*false/.test(checkMain) && !SHOW_TRIPS_DETAILS) {
 if (!/power:\s*\[[^\]]*?1500/.test(checkMain) || !/torque:\s*\[[^\]]*?1700/.test(checkMain)) {
   die('packed main.js missing power/torque RANGES maxima 1500/1700');
 }
+if (!/function sportGlanceChips/.test(checkMain) || !/sportPowerPct/.test(checkMain)) {
+  die('packed main.js missing sport glance chips');
+}
+const engMenu = (checkScreens.screens.find((s) => s.name === 'engine').components || []).find(
+  (c) => c.name === 'engineMenu'
+);
+if (!engMenu || !/Boost|Power|Torque/.test(String(engMenu.opts && engMenu.opts.chips))) {
+  die('packed engineMenu missing sport glance chip preview');
+}
 const screensBlob = JSON.stringify(checkScreens);
 if (/Effekt|Vridmoment|Etanol|Skicka-logg|väntar på DME|SUPPORTLOGG|lokalt/.test(screensBlob)) {
   die('packed screens.json still has Swedish UI copy');
@@ -322,5 +336,5 @@ if (!/return 'Ethanol'/.test(checkEth)) die('packed ethanol.js label not English
 
 console.log(`packed ${outTgz}`);
 console.log(
-  `modules ${modules.length}; adjust RHMI 10000; tabs y=748; SHOW_TRIPS_DETAILS=${SHOW_TRIPS_DETAILS}; EN UI; power/torque max 1500/1700`
+  `modules ${modules.length}; adjust RHMI 10000; tabs y=748; SHOW_TRIPS_DETAILS=${SHOW_TRIPS_DETAILS}; EN UI; sport chips; power/torque max 1500/1700`
 );
