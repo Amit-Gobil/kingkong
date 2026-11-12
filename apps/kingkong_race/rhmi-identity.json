@@ -1,0 +1,18 @@
+{
+  "id": "kingkong_race",
+  "appletId": 21974,
+  "appletIdNote": "Unused high OAP appletId chosen for KingKong Race. kingkong_cardata uses 20973 — Race must never reuse cardata appletId, entryPoint uuid, stringBundleUuid, or resourceBundleUuid.",
+  "applicationUuid": "cb5a9b79-58fe-4271-b756-b1c2b51b9afa",
+  "stringBundleUuid": "f0782155-b87d-4125-908e-dd7abad1d233",
+  "resourceBundleUuid": "7a48cc83-5d31-4a31-923f-62661a76a098",
+  "entryPointUuid": "734a86da-693c-44fb-a934-96091609ca40",
+  "entryPointTextId": "SID_7",
+  "icon": "kingkong_race_icon.png",
+  "forbiddenCardataCollisions": {
+    "appletId": 20973,
+    "entryPoint": "49e7d461-9f2d-4ade-9cb3-5c1c116d50ab",
+    "stringBundleUuid": "b140f73d-24fe-40ef-aa32-192c778ca6c9",
+    "resourceBundleUuid": "50108a66-5785-48ca-9955-2ed27618375a",
+    "icon": "kingkong_cardata_icon.png"
+  }
+}

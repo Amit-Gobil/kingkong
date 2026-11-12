@@ -1,8 +1,8 @@
 {
   "schema": 1,
   "id": "kingkong_race",
-  "version": "1.0.0",
-  "tree": "kingkong_race@1.0.0",
+  "version": "1.0.1",
+  "tree": "kingkong_race@1.0.1",
   "modules": [
     "src/main.js",
     "src/timer.js",
