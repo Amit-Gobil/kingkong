@@ -28,5 +28,7 @@ node tools/pack-race.js
 
 ## Install
 1. MGU Store → source `Amit-Gobil/kingkong` → branch **main**
-2. Install **KingKong Race** `1.0.2` (separate from Kingkong live-data)
-3. Restart HU if the tile does not appear
+2. Install **KingKong Race** `1.0.3` (separate from Kingkong live-data)
+3. Restart HU if the tile does not appear or an older Race build was installed
+
+`1.0.0`–`1.0.2` could install a tile but fail to open: SOME/IP `manifest.json` lacked OnlineApp lifecycle proxies (`OAPController`, `AppStatus`, NSM, …). `pack-race.js` now merges those in.

@@ -4,6 +4,10 @@
  * Source of truth for IDs: apps/kingkong_race/rhmi-identity.json
  * Does not copy cardata appletId / entryPoint / bundle UUIDs / icon name.
  *
+ * Also ensures OnlineApp lifecycle SOME/IP proxies are present (OAPController,
+ * AppStatus, NSM, …). Race 1.0.0–1.0.2 shipped a stripped manifest that let the
+ * tile install but OnlineApp.start() fail silently on open.
+ *
  * Usage: node tools/pack-race.js [version]
  * Default version: apps/kingkong_race/app.json → version
  */
@@ -19,6 +23,46 @@ const APP = path.join(REPO, 'apps', 'kingkong_race');
 const IDENTITY = JSON.parse(
   fs.readFileSync(path.join(APP, 'rhmi-identity.json'), 'utf8')
 );
+
+/** Proxies OnlineApp / MainApp need to start + open the entry state (from working cardata). */
+const OAP_LIFECYCLE_PROXIES = {
+  'de.bmw.infotainment.personalization.SessionManager': '*',
+  'de.bmw.infotainment.personalization.UserAccountManager': '*',
+  'de.bmw.infotainment.telematic.oap.AppBookmarks': {
+    instances: ['${userId}'],
+    methods: ['registerBookmark']
+  },
+  'de.bmw.infotainment.telematic.oap.AppStatus': '*',
+  'de.bmw.infotainment.telematic.oap.WakeUpOnDemand': {
+    instances: ['${userId}'],
+    methods: ['registerParticipant', 'unregisterParticipant']
+  },
+  'de.bmw.infotainment.telematic.oap.WodControl': {
+    instances: '${userId}',
+    methods: ['offerService', 'stopOfferingService']
+  },
+  'de.bmw.infotainment.telematic.oapcontroller.OAPController': '*',
+  'de.bmw.infotainment.telematic.provisioning.Provisioning': {
+    instances: '1',
+    broadcasts: ['provisioningDataJSON'],
+    methods: ['getValueJSON', 'setFilterForProvisioningData']
+  },
+  'org.genivi.nodestatemanager.Consumer': {
+    instances: 'NSMConsumer',
+    broadcasts: ['ShutdownEvents', 'SessionStateChanged'],
+    methods: [
+      'LifecycleRequestComplete',
+      'RegisterShutdownClient',
+      'UnRegisterShutdownClient'
+    ]
+  }
+};
+
+/** Race vehicle signals (speed + longitudinal accel). Declared only — main.js never uses TASU/DME. */
+const RACE_VEHICLE_PROXIES = {
+  'de.bmw.infotainment.vehicle.CDS2': '*',
+  'de.bmw.infotainment.vehicle.Vehicle2': '*'
+};
 
 function die(msg) {
   console.error(msg);
@@ -93,6 +137,22 @@ for (const lang of ['en_US', 'en_GB']) {
 const iconPath = path.join(pkgDir, 'rhmiData', 'resources', IDENTITY.icon);
 if (!fs.existsSync(iconPath)) die(`missing resource icon ${IDENTITY.icon}`);
 
+// SOME/IP: keep HMI/RHMI proxies already in the base package; force OAP lifecycle + Race vehicle.
+const manifestPath = path.join(pkgDir, 'manifest.json');
+const manifest = readJson(manifestPath);
+manifest.proxies = Object.assign({}, manifest.proxies, OAP_LIFECYCLE_PROXIES, RACE_VEHICLE_PROXIES);
+if (!manifest.services) manifest.services = {};
+manifest.services['de.bmw.infotainment.telematic.oap.AppStatus'] = {
+  instances: ['${userId}']
+};
+writeJson(manifestPath, manifest);
+for (const key of Object.keys(OAP_LIFECYCLE_PROXIES)) {
+  if (!manifest.proxies[key]) die(`missing OAP lifecycle proxy after merge: ${key}`);
+}
+if (!manifest.proxies['de.bmw.infotainment.telematic.oapcontroller.OAPController']) {
+  die('OAPController proxy missing — OnlineApp will not open');
+}
+
 const pkg = readJson(path.join(pkgDir, 'package.json'));
 pkg.name = 'kingkong_race';
 pkg.version = version;
@@ -114,11 +174,10 @@ writeJson(path.join(pkgDir, 'npm-shrinkwrap.json'), {
 });
 
 const repoSrc = path.join(APP, 'src');
-const pkgSrc = path.join(pkgDir, 'src');
-fs.mkdirSync(pkgSrc, { recursive: true });
-for (const f of fs.readdirSync(repoSrc)) {
-  const src = path.join(repoSrc, f);
-  if (fs.statSync(src).isFile()) fs.copyFileSync(src, path.join(pkgSrc, f));
+// Match cardata: modules live only in outer tgz `src/`, not inside the versioned package tree.
+const strayPkgSrc = path.join(pkgDir, 'src');
+if (fs.existsSync(strayPkgSrc)) {
+  execFileSync('rm', ['-rf', strayPkgSrc]);
 }
 
 const mgu = {
@@ -187,3 +246,6 @@ for (const f of fs.readdirSync(APP)) {
 
 console.log(`packed ${outTgz}`);
 console.log(`appletId ${IDENTITY.appletId} (cardata forbidden ${forbidden.appletId})`);
+console.log(
+  `someip proxies ${Object.keys(manifest.proxies).length} (incl. OAPController + AppStatus)`
+);
