@@ -1,0 +1,15 @@
+{
+  "id": "kingkong_cluster",
+  "version": "1.0.0",
+  "title": "Kingkong Cluster",
+  "description": "Kingkong Cluster 1.0.0: Quiet Dials black/gold KOMBI status strip via Cluster renderer (boost / power% / torque%). English. G81 M Mode yield. Requires Cluster renderer from Store.",
+  "mguHmi": [
+    "ID8"
+  ],
+  "needs": [
+    "renderer"
+  ],
+  "requires": {
+    "mgu-deploy": "0.7.5"
+  }
+}

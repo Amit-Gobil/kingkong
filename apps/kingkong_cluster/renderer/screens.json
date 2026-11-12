@@ -1,0 +1,299 @@
+{
+  "screens": [
+    {
+      "name": "drag",
+      "kind": "gpu",
+      "title": "Status",
+      "entry": true,
+      "bg": "#050505",
+      "bgArea": "app",
+      "theme": "kingkong",
+      "components": [
+        {
+          "name": "brandTitle",
+          "rtype": "gpu",
+          "gpu": "text",
+          "x": 40,
+          "y": 90,
+          "w": 1400,
+          "h": 56,
+          "opts": {
+            "text": "KINGKONG CLUSTER",
+            "size": 42,
+            "font": "bold",
+            "spacing": 3,
+            "align": "left",
+            "color": "#d4af37"
+          }
+        },
+        {
+          "name": "brandSub",
+          "rtype": "gpu",
+          "gpu": "text",
+          "x": 40,
+          "y": 150,
+          "w": 1600,
+          "h": 32,
+          "opts": {
+            "text": "Quiet Dials · KOMBI status strip",
+            "size": 22,
+            "align": "left",
+            "color": "#9a9a9a"
+          }
+        },
+        {
+          "name": "connStatus",
+          "rtype": "gpu",
+          "gpu": "text",
+          "x": 40,
+          "y": 230,
+          "w": 2400,
+          "h": 36,
+          "opts": {
+            "text": "Cluster renderer: looking…",
+            "size": 26,
+            "font": "bold",
+            "align": "left",
+            "color": "#d4af37"
+          }
+        },
+        {
+          "name": "layerStatus",
+          "rtype": "gpu",
+          "gpu": "text",
+          "x": 40,
+          "y": 280,
+          "w": 2400,
+          "h": 32,
+          "opts": {
+            "text": "Layer: —",
+            "size": 22,
+            "align": "left",
+            "color": "#c8c8c8"
+          }
+        },
+        {
+          "name": "liveKv",
+          "rtype": "gpu",
+          "gpu": "teleKv",
+          "x": 40,
+          "y": 340,
+          "w": 1200,
+          "h": 280,
+          "opts": {
+            "rows": [
+              ["Boost", "--"],
+              ["Power", "--"],
+              ["Torque", "--"],
+              ["Target", "widget"]
+            ]
+          }
+        },
+        {
+          "name": "hintText",
+          "rtype": "gpu",
+          "gpu": "text",
+          "x": 40,
+          "y": 660,
+          "w": 2400,
+          "h": 60,
+          "opts": {
+            "text": "Install Cluster renderer from Store first. On the cluster, open the widget menu and pick Kingkong Cluster.",
+            "size": 20,
+            "align": "left",
+            "color": "#7a7a7a"
+          }
+        },
+        {
+          "name": "dragTabs",
+          "rtype": "gpu",
+          "gpu": "teleTabBar",
+          "x": 0,
+          "y": 748,
+          "w": 2560,
+          "h": 72,
+          "opts": {
+            "tabs": "Status, Settings",
+            "sel": 0
+          }
+        }
+      ]
+    },
+    {
+      "name": "race",
+      "kind": "gpu",
+      "title": "Status",
+      "entry": false,
+      "bg": "#050505",
+      "bgArea": "app",
+      "theme": "kingkong",
+      "components": [
+        {
+          "name": "raceNote",
+          "rtype": "gpu",
+          "gpu": "text",
+          "x": 40,
+          "y": 200,
+          "w": 2000,
+          "h": 40,
+          "opts": {
+            "text": "Use Status tab",
+            "size": 28,
+            "color": "#9a9a9a"
+          }
+        },
+        {
+          "name": "raceTabs",
+          "rtype": "gpu",
+          "gpu": "teleTabBar",
+          "x": 0,
+          "y": 748,
+          "w": 2560,
+          "h": 72,
+          "opts": {
+            "tabs": "Status, Settings",
+            "sel": 0
+          }
+        }
+      ]
+    },
+    {
+      "name": "online",
+      "kind": "gpu",
+      "title": "Status",
+      "entry": false,
+      "bg": "#050505",
+      "bgArea": "app",
+      "theme": "kingkong",
+      "components": [
+        {
+          "name": "onlineNote",
+          "rtype": "gpu",
+          "gpu": "text",
+          "x": 40,
+          "y": 200,
+          "w": 2000,
+          "h": 40,
+          "opts": {
+            "text": "Use Status tab",
+            "size": 28,
+            "color": "#9a9a9a"
+          }
+        },
+        {
+          "name": "onlineTabs",
+          "rtype": "gpu",
+          "gpu": "teleTabBar",
+          "x": 0,
+          "y": 748,
+          "w": 2560,
+          "h": 72,
+          "opts": {
+            "tabs": "Status, Settings",
+            "sel": 0
+          }
+        }
+      ]
+    },
+    {
+      "name": "settings",
+      "kind": "gpu",
+      "title": "Settings",
+      "entry": false,
+      "bg": "#050505",
+      "bgArea": "app",
+      "theme": "kingkong",
+      "components": [
+        {
+          "name": "settingsTitle",
+          "rtype": "gpu",
+          "gpu": "text",
+          "x": 40,
+          "y": 90,
+          "w": 1400,
+          "h": 48,
+          "opts": {
+            "text": "STRIP SETTINGS",
+            "size": 36,
+            "font": "bold",
+            "spacing": 2,
+            "align": "left",
+            "color": "#d4af37"
+          }
+        },
+        {
+          "name": "enableRow",
+          "rtype": "gpu",
+          "gpu": "teleRow",
+          "x": 40,
+          "y": 180,
+          "w": 1400,
+          "h": 104,
+          "opts": {
+            "on": true,
+            "label": "Show strip on KOMBI",
+            "sub": "Needs Cluster renderer + widget pick",
+            "control": "toggle"
+          }
+        },
+        {
+          "name": "yieldRow",
+          "rtype": "gpu",
+          "gpu": "teleRow",
+          "x": 40,
+          "y": 300,
+          "w": 1400,
+          "h": 104,
+          "opts": {
+            "on": true,
+            "label": "Hide in M Mode",
+            "sub": "G81: yield when M Mode looks active",
+            "control": "toggle"
+          }
+        },
+        {
+          "name": "targetRow",
+          "rtype": "gpu",
+          "gpu": "teleKv",
+          "x": 40,
+          "y": 400,
+          "w": 1200,
+          "h": 160,
+          "opts": {
+            "rows": [
+              ["Target", "widget"],
+              ["Tip", "Tap Cycle target to switch widget/map"]
+            ]
+          }
+        },
+        {
+          "name": "cycleTargetBtn",
+          "rtype": "gpu",
+          "gpu": "teleButton",
+          "x": 40,
+          "y": 580,
+          "w": 360,
+          "h": 72,
+          "opts": {
+            "text": "Cycle target",
+            "kind": "outline"
+          },
+          "onTap": "event:cycleTarget"
+        },
+        {
+          "name": "settingsTabs",
+          "rtype": "gpu",
+          "gpu": "teleTabBar",
+          "x": 0,
+          "y": 748,
+          "w": 2560,
+          "h": 72,
+          "opts": {
+            "tabs": "Status, Settings",
+            "sel": 1
+          }
+        }
+      ]
+    }
+  ]
+}
