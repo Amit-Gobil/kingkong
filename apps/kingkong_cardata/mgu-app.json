@@ -19,5 +19,8 @@
     "oap-sdk/src/core/OnlineApp.js",
     "oap-sdk/src/logging/logging",
     "oap-sdk/src/someip/someipBuilders"
+  ],
+  "mguHmi": [
+    "ID8"
   ]
 }

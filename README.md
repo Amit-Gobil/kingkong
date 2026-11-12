@@ -14,14 +14,15 @@ Live values: RPM, boost, effekt, vridmoment, oil / coolant / intake temps, batte
 
 You already need **[MGU Store](https://github.com/robertnisipeanu/mgu-store)** and its **renderer** on the head unit.
 
-1. In the car, open **Store → Settings → Add source**.
+1. In the car, open **Store → Settings → Add source** (or edit the existing `Amit-Gobil/kingkong` source).
 2. Enter GitHub source: **`Amit-Gobil/kingkong`**
-3. Pick channel **Branches** → **`main`** (or this PR’s branch while testing), or **Tags** once a `x.y.z` tag exists.
-4. Install **Kingkong** (`kingkong_cardata`).
-5. On **iDrive 8**, restart the head unit (Store → Settings → **Restart head unit**) so the install takes effect.
+3. Channel — pick **one**:
+   - **After this PR is merged:** **Gren / Branches → `main`**
+   - **Until then (interim):** **Gren / Branches → `cursor/kingkong-cardata-app-f649`**  
+     (`main` is still the empty initial commit and has **no** `mgu-repo.json` — Store shows *no mgu-repo.json* / *0 komponenter*.)
+4. **Kontrollera nu** (Check now). Kingkong (`kingkong_cardata`) should list.
+5. Install **Kingkong**, then on **iDrive 8** restart the head unit (Store → Settings → **Restart head unit**).
 6. Open **Kingkong** from All apps.
-
-The Store builds/installs from this repo’s `mgu-repo.json` (committed package under `apps/kingkong_cardata/`).
 
 ### Requirements
 - iDrive 8 MGU (ID8 first; ID7 later)
@@ -37,11 +38,10 @@ The Store builds/installs from this repo’s `mgu-repo.json` (committed package 
 | `assets/kingkong-tuning-logo.png` | Brand logo |
 | `tools/prebuilt.js` | No-op build (package already packed) |
 
-## Notes / blockers
-- **Signals:** RPM / temps / torque from SOME/IP; boost and some fuel values may fall back to OBD/DME like other live apps. Scaling can differ per car — use Settings bar ends and demo mode to check.
-- **Logo:** Official Kingkong Tuning logo is in `assets/` and used as the app tile icon.
-- **ID8 vs ID7:** This release targets **ID8 only** (`mguHmi: ["ID7"]` not declared). ID7 can come later.
-- **Design:** Behaviour adapted from Car Data–class live apps; visuals are Kingkong Tuning black/gold, not IterioDev’s UI.
+## Notes
+- **Signals:** RPM / temps / torque from SOME/IP; boost and some fuel values may fall back to OBD/DME. Adjust Settings bar ends on the G81 if needed.
+- **ID8 only** in this release.
+- Behaviour adapted from Car Data–class live apps; visuals are Kingkong Tuning black/gold (not IterioDev’s look).
 
 ## License
 See `LICENSE` and `NOTICE.md`.

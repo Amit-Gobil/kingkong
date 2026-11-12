@@ -4,7 +4,8 @@
     "path": "apps/*",
     "build": {
       "node": "tools/prebuilt.js",
-      "output": "{dir}/{id}@{version}.tgz"
+      "output": "{dir}/{id}@{version}.tgz",
+      "shared": ["tools/prebuilt.js"]
     },
     "uninstallable": true
   }
