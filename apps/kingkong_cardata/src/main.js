@@ -450,8 +450,8 @@ const RENDERER = path.join(SOURCE, 'renderer');
 const runtime = (f) => require(path.join(RENDERER, f));
 const PAGES = ['engine', 'fuel', 'trips', 'transmission', 'dpf', 'details', 'settings'];   // RHMI host states
 const TAB = { engine: 'Engine', fuel: 'Fuel', trips: 'Trips', transmission: 'Transmission', dpf: 'DPF', details: 'Details', settings: 'Settings' };
-// Kingkong 1.0 tabs: Engine / Fuel / Trips / Settings (extra host pages kept for later)
-const shownPages = () => ['engine', 'fuel', 'trips', 'settings'];
+// Kingkong tabs: Engine / Fuel / Trips / Transmission / Details / Settings
+const shownPages = () => ['engine', 'fuel', 'trips', 'transmission', 'details', 'settings'];
 let screens = null, tabsShown = '';
 function syncTabs() {          // every page's frame: the tabs shown, its own one selected
     const s = shownPages(), t = s.map((p) => TAB[p]).join(', ');
