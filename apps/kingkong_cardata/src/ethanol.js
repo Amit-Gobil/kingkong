@@ -1,36 +1,28 @@
 'use strict';
 /*
- * ethanol.js - etanol % for Kingkong on G81 + Motive ReFlex / MHD.
+ * ethanol.js — etanol % for Kingkong on Amit’s G81 (S58) + Motive ReFlex + MHD+.
  *
- * ReFlex / FlexFuel+ / Zeitronix / MHD ECA broadcast on PT-CAN (500 kbit/s):
- *   Send IDs used in the wild (Motive + MG Flasher + TRP):
- *     0x0EC  — N54/B58/S58 MHD “Zeitronix ECA” / FlexFuel+ ReFlex&ECA presets (most G-series)
- *     0x0ED  — TRP duplicate frame (same payload layout)
- *     0x334  — S55/N55F MHD / EcuTek ReFlex send ID
- *     0x4CB  — MG Flasher “Universal canbus” alternate
- *   ECA / ReFlex / MHD FlexFuel payload (8 bytes):
- *     byte0  ethanol % u8 0..100
- *     byte1  fuel temp u8, °C = raw - 40
- *     byte2..5  often static/duplicate (TRP: 0x05,0x44, then E% and temp again)
- *     byte6/7  sensor status (0=ok)
+ * Evidence (Amit MHD Monitor log, 2026-09-26):
+ *   CALID 00008A51145047 / PRGID 00005C64145007 / VIN WBS11GB04PFP58981
+ *   Column "Ethanol Content (Active) (%)" ≈ 78, with ReFlex Aux columns present.
+ *   MHD docs: Active = ethanol used in custom DME calc (≈ CAN unless tuner override).
  *
- * The MGU has no PT-CAN socket. MHD ingests those frames into the DME; we read
- * mirrors over TASU, forcing probes even when the DME omits PID 0x52 from its
- * “supported PIDs” bitmap (common — 1.2.1 never asked 0x52 for that reason):
- *   1) OBD 01 52          (forced; raw byte as % if 0..100, else A*100/255)
- *   2) UDS 22 F4 52       (ISO OBD-PID-via-UDS mapping)
- *   3) UDS 22 550D        (stock BMW PROZENT_ALK_KRST ×0.39215686, or raw 0..100)
- *
- * Settings debug keeps the last raw attempt per path.
+ * HU has no PT-CAN. MHD Active lives in DME RAM (Monitor reads it over the WiFi
+ * adapter via proprietary memory requests). Closest standard UDS mirrors on BMW
+ * MG1/B48–style PID tables (same family as S58 DME8):
+ *   22 59 39  — "Ethanol content at the injection valve"  ≈ Active / fueling
+ *              u16 × 0.00003052 (= /32768) → 0..1 fraction → ×100 = %
+ *   22 59 38  — "Ethanol content - raw value from the sensor" ≈ CAN/ECA
+ *              same scale
+ * Stock DME8FF_R also lists 550D (PROZENT_ALK_KRST, ×0.39215686) — often empty
+ * on petrol G81 without factory flex. OBD 01 52 / UDS F4 52 kept as aftermarket
+ * mirrors. Prefer 5939 → 5938 → OBD52 → F452 → 550D.
  */
 const CAN_IDS = [0x0EC, 0x0ED, 0x334, 0x4CB];
+const FRAC = 1 / 32768; // BMW table multiply 0.00003052
 
 const CAN = {
-    ids: CAN_IDS,
-    id: 0x0EC,
-    bitrate: 500000,
-    rateHz: 4,
-    format: 'ECA/ReFlex/MHD-FlexFuel',
+    ids: CAN_IDS, id: 0x0EC, bitrate: 500000, rateHz: 4, format: 'ECA/ReFlex/MHD-FlexFuel',
     decodeFrame(bytes) {
         if (!bytes || bytes.length < 1) return null;
         const pct = bytes[0] | 0;
@@ -45,15 +37,14 @@ const CAN = {
 
 function createEthanol() {
     return {
-        pct: null,
-        src: null,
-        at: 0,
-        tempC: null,
+        pct: null, src: null, at: 0, tempC: null,
         debug: {
+            d5939: 'not asked yet',
+            d5938: 'not asked yet',
             obd52: 'not asked yet',
             f452: 'not asked yet',
             d550D: 'not asked yet',
-            note: 'CAN 0xEC/0xED/0x334/0x4CB → DME; HU reads mirrors',
+            note: 'MHD Active≈5939; sensor/CAN≈5938 (u16/32768)',
         },
     };
 }
@@ -71,8 +62,48 @@ function decodeByte(raw) {
     if (typeof raw !== 'number' || !isFinite(raw) || raw < 0) return null;
     raw = raw | 0;
     if (raw > 255) return null;
-    if (raw <= 100) return raw;                 // direct % (Reflex/MHD mirror)
-    return +(raw * 100 / 255).toFixed(0);       // SAE J1979
+    if (raw <= 100) return raw;
+    return +(raw * 100 / 255).toFixed(0);
+}
+
+/** u16 BMW ethanol fraction → % ; also accept single-byte direct %. */
+function decodePayload(payload) {
+    if (!payload || !payload.length) return null;
+    if (payload.length === 1) return decodeByte(payload[0]);
+    const u16 = ((payload[0] & 255) << 8) | (payload[1] & 255);
+    // Primary: fraction 0..1 → %
+    let pct = u16 * FRAC * 100;
+    if (pct >= 0 && pct <= 100.5) return +pct.toFixed(1);
+    // Fallback: already stored as centi-% or direct 0..100 in low byte
+    if (payload[0] === 0 && payload[1] <= 100) return payload[1];
+    if (u16 <= 10000 && u16 >= 0) {
+        const c = u16 / 100;
+        if (c <= 100) return +c.toFixed(1);
+    }
+    return null;
+}
+
+function udsPayload(uds) {
+    if (!uds || !uds.length) return { err: 'no reply' };
+    if (uds[0] === 0x7F) return { err: 'NRC ' + (uds.length > 2 ? uds[2].toString(16) : '?') };
+    if (uds[0] === 0x62 && uds.length >= 4) return { data: uds.slice(3), hex: uds.slice(0, Math.min(uds.length, 7)).map((b) => b.toString(16).padStart(2, '0')).join(' ') };
+    return { data: uds, hex: uds.slice(0, Math.min(uds.length, 5)).map((b) => b.toString(16).padStart(2, '0')).join(' ') };
+}
+
+function fromUds5939(uds, state, now) {
+    const p = udsPayload(uds);
+    if (p.err) { state.debug.d5939 = p.err; return false; }
+    const pct = decodePayload(p.data);
+    state.debug.d5939 = (p.hex || '') + ' → ' + (pct == null ? 'bad' : pct + '%');
+    return pct == null ? false : setOk(state, pct, 'uds5939', now);
+}
+
+function fromUds5938(uds, state, now) {
+    const p = udsPayload(uds);
+    if (p.err) { state.debug.d5938 = p.err; return false; }
+    const pct = decodePayload(p.data);
+    state.debug.d5938 = (p.hex || '') + ' → ' + (pct == null ? 'bad' : pct + '%');
+    return pct == null ? false : setOk(state, pct, 'uds5938', now);
 }
 
 function fromObd52Byte(rawA, state, now) {
@@ -84,16 +115,11 @@ function fromObd52Byte(rawA, state, now) {
 }
 
 function fromUdsF452(uds, state, now) {
-    if (!uds || !uds.length) { state.debug.f452 = 'no reply'; return false; }
-    if (uds[0] === 0x7F) {
-        state.debug.f452 = 'NRC ' + (uds.length > 2 ? uds[2].toString(16) : '?');
-        return false;
-    }
+    const p = udsPayload(uds);
+    if (p.err) { state.debug.f452 = p.err; return false; }
     let raw;
-    if (uds[0] === 0x62 && uds.length >= 4) {
-        if (uds[1] === 0xF4 && uds[2] === 0x52) raw = uds[3];
-        else raw = uds[uds.length - 1];
-    } else raw = uds[0];
+    if (uds[0] === 0x62 && uds.length >= 4 && uds[1] === 0xF4 && uds[2] === 0x52) raw = uds[3];
+    else raw = p.data[p.data.length - 1];
     state.debug.f452 = 'raw=' + raw;
     const pct = decodeByte(raw);
     if (pct === null) { state.debug.f452 += ' · bad'; return false; }
@@ -102,14 +128,9 @@ function fromUdsF452(uds, state, now) {
 }
 
 function fromUds550D(uds, state, now) {
-    if (!uds || !uds.length) { state.debug.d550D = 'no reply'; return false; }
-    if (uds[0] === 0x7F) {
-        state.debug.d550D = 'NRC ' + (uds.length > 2 ? uds[2].toString(16) : '?');
-        return false;
-    }
-    let raw;
-    if (uds[0] === 0x62 && uds.length >= 4) raw = uds[3];
-    else raw = uds[0];
+    const p = udsPayload(uds);
+    if (p.err) { state.debug.d550D = p.err; return false; }
+    const raw = p.data[0] | 0;
     const scaled = raw * 0.39215686;
     const pct = (raw >= 5 && raw <= 100 && scaled < 5) ? raw : scaled;
     state.debug.d550D = 'raw=' + raw + ' → ' + Math.round(pct) + '%';
@@ -129,6 +150,8 @@ function value(state) {
 
 function label(state) {
     if (!state || !state.src) return 'Etanol';
+    if (state.src === 'uds5939') return 'Etanol · MHD Active (5939)';
+    if (state.src === 'uds5938') return 'Etanol · MHD sensor (5938)';
     if (state.src === 'obd52') return 'Etanol · OBD 52 / Reflex';
     if (state.src === 'udsF452') return 'Etanol · UDS F452 / Reflex';
     if (state.src === 'uds550D') return 'Etanol · UDS 550D';
@@ -139,33 +162,43 @@ function label(state) {
 function debugRows(state) {
     const d = (state && state.debug) || {};
     return [
+        ['UDS 5939 Active', d.d5939 || '--'],
+        ['UDS 5938 sensor', d.d5938 || '--'],
         ['OBD 01 52', d.obd52 || '--'],
         ['UDS 22 F452', d.f452 || '--'],
         ['UDS 22 550D', d.d550D || '--'],
-        ['CAN IDs', '0xEC 0xED 0x334 0x4CB'],
         ['Source', state && state.src ? (state.src + ' · ' + state.pct + '%') : 'none'],
     ];
 }
 
+/** Probe table for main.js rotation (MHD Active first). */
+const PROBES = [
+    { key: '5939', bytes: [0x22, 0x59, 0x39], apply: fromUds5939 },
+    { key: '5938', bytes: [0x22, 0x59, 0x38], apply: fromUds5938 },
+    { key: 'F452', bytes: [0x22, 0xF4, 0x52], apply: fromUdsF452 },
+    { key: '550D', bytes: [0x22, 0x55, 0x0D], apply: fromUds550D },
+];
+
 module.exports = {
-    CAN, CAN_IDS, createEthanol, setOk, decodeByte,
-    fromObd52Byte, fromUdsF452, fromUds550D, fromCanEc,
+    CAN, CAN_IDS, FRAC, PROBES, createEthanol, setOk, decodeByte, decodePayload,
+    fromUds5939, fromUds5938, fromObd52Byte, fromUdsF452, fromUds550D, fromCanEc,
     value, label, debugRows,
     test: function () {
         const assert = require('assert');
         const s = createEthanol();
-        assert(fromCanEc([70, 80, 5, 0x44, 70, 80, 0, 0], s));
-        assert.strictEqual(s.pct, 70);
-        assert(fromObd52Byte(85, s));
-        assert.strictEqual(s.pct, 85);
-        assert(fromObd52Byte(217, s));
-        assert.strictEqual(s.pct, 85);
-        assert(fromUdsF452([0x62, 0xF4, 0x52, 60], s));
-        assert.strictEqual(s.pct, 60);
-        assert.strictEqual(s.src, 'udsF452');
+        // 78% → u16 = round(0.78 * 32768) = 25559
+        const raw = Math.round(0.78 * 32768);
+        assert(fromUds5939([0x62, 0x59, 0x39, (raw >> 8) & 255, raw & 255], s));
+        assert.strictEqual(s.pct, 78);
+        assert.strictEqual(s.src, 'uds5939');
+        assert(fromUds5938([0x62, 0x59, 0x38, (raw >> 8) & 255, raw & 255], s));
+        assert.strictEqual(s.src, 'uds5938');
+        assert(fromObd52Byte(78, s));
+        assert(fromUdsF452([0x62, 0xF4, 0x52, 78], s));
         assert(fromUds550D([0x62, 0x55, 0x0D, 178], s));
-        assert(debugRows(s)[3][1].indexOf('0xEC') >= 0);
-        console.log('ethanol self-check ok');
+        assert(debugRows(s)[0][0].indexOf('5939') >= 0);
+        assert.strictEqual(PROBES[0].key, '5939');
+        console.log('ethanol self-check ok (5939 Active @78%)');
     },
 };
 
