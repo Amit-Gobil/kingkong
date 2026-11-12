@@ -1,8 +1,8 @@
 {
  "id": "kingkong_cardata",
- "version": "1.2.0",
+ "version": "1.2.1",
  "title": "Kingkong",
- "description": "Kingkong Tuning Quiet Dials for BMW iDrive 8 (M3 G81): bottom tabs, etanol 550D, Skicka-logg ringbuffer. Black and gold.",
+ "description": "Kingkong Tuning Quiet Dials for BMW iDrive 8: raised bottom tabs (above ID8 chrome), etanol via Motive ReFlex/CAN (OBD 52) + UDS 550D, Skicka-logg. Black and gold.",
  "mguHmi": [
   "ID8"
  ],

@@ -1,8 +1,8 @@
 {
   "schema": 1,
   "id": "kingkong_cardata",
-  "version": "1.2.0",
-  "tree": "kingkong_cardata@1.2.0",
+  "version": "1.2.1",
+  "tree": "kingkong_cardata@1.2.1",
   "modules": [
     "src/main.js",
     "src/obd.js",
@@ -14,7 +14,8 @@
     "src/dpf.js",
     "src/tasu-guard.js",
     "src/online-host.js",
-    "src/logbuf.js"
+    "src/logbuf.js",
+    "src/ethanol.js"
   ],
   "sdk": [
     "oap-sdk/src/core/OnlineApp.js",

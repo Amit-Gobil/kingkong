@@ -42,7 +42,7 @@ function fuelView(series, now, paused, ethanol) {
     if (paused) { series = {}; now = {}; ethanol = null; }       // no values from before the pause
     const out = { fuelMenu: paused ? PAUSED() : { chips: [], sub: 'From the DME · each with its last 5 minutes' } };
     // Always show etanol (UDS 550D) so G81 can be checked vs MHD even when the DME has not answered yet
-    out.ethanolFuel = { value: isNum(ethanol) ? ethanol : null, label: 'Etanol (UDS 550D)', unit: '%' };
+    out.ethanolFuel = { value: isNum(ethanol) ? ethanol : null, label: 'Etanol · Reflex/CAN · 550D', unit: '%' };
     FUEL.forEach(([k, unit, d, what], i) => {
         const v = series[k] || [], s = span(v);
         out[`fuel${i}`] = { value: fx(now[k], d), unit, points: pts(v, d), lo: s.lo, hi: s.hi,

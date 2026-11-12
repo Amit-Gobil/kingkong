@@ -77,6 +77,7 @@ const dpf = require('./dpf.js');
 const { createGuard } = require('./tasu-guard.js');
 const { createHost } = require('./online-host.js');
 const { RingLog } = require('./logbuf.js');
+const ethMod = require('./ethanol.js');
 
 const LOG = '[kingkong_cardata]';
 
@@ -185,7 +186,7 @@ const obdFresh = (k) => o[k] && 'value' in o[k] && Date.now() - o[k].at < OBD_FR
 const busC = (r, cal) => (valid(r, 255) ? cal(r) : undefined);
 let gearK = CAL.gearK;
 const boostTgt = { kpa: null, at: 0 };   // the boost target from 22 4AB0 (absolute kPa): Fuel
-const ethanol = { pct: null, at: 0 };    // UDS DID 550D (engine-groups-catalog), shown even when null
+const ethanol = ethMod.createEthanol();  // Reflex/CAN (OBD 52) then UDS 550D
 const V = {
     // the bus while it answers (polled every 50-100 ms), OBD (a round trip per value) only as fallback
     rpm: () => (busFresh('CDS.statusEngineSpeed2') && valid(raw.rpm, 65535) ? CAL.rpm(raw.rpm) : obdVal('rpm')),
@@ -208,7 +209,7 @@ const V = {
     odo: () => (valid(raw.odo, 16777215) ? raw.odo : undefined),
     tank: () => (valid(raw.tank, 255) ? raw.tank : undefined),
     // the boost target: 22 4AB0 while fresh, else OBD 0x70's commanded pressure; minus the outside pressure, in bar
-    ethanol: () => ethanol.pct,   // null until 550D answers; still shown as -- on Engine/Fuel
+    ethanol: () => ethMod.value(ethanol),
     boostT: () => {
         const abs = Date.now() - boostTgt.at < 3000 ? boostTgt.kpa : obdFresh('boostT') ? obdVal('boostT') : undefined;
         return abs === undefined || abs === null || obdVal('baro') === undefined ? undefined : (abs - obdVal('baro')) / 100;
@@ -331,7 +332,7 @@ function fastPids() {
         .filter((p) => p !== null && usablePid(DME, p));
 }
 // 0x0B here too: with 0x87 in the fast set, both MAP PIDs show on the details page (and count for boost)
-const SLOW_PIDS = [0x0F, 0x33, 0x0B, 0x05, 0x5C, 0x04, 0x0E, 0x10, 0x61, 0x62, 0x63, 0x46, 0xA4, 0x23, 0x0A, 0x5E];   // 0x5E: Trips' fuel reference
+const SLOW_PIDS = [0x0F, 0x33, 0x0B, 0x05, 0x5C, 0x04, 0x0E, 0x10, 0x61, 0x62, 0x63, 0x46, 0xA4, 0x23, 0x0A, 0x5E, 0x52];   // 0x52: etanol (Reflex/CAN via DME); 0x5E fuel ref
 const supported = {};   // target -> [pid] once asked
 const refused = new Set();          // "target:pid" the ECU refused: not asked again
 let tasu = null;
@@ -401,6 +402,8 @@ function finishObd(answer) {
     } else {
         if (answer.supported.length || pids[0] === 0x00) supported[target] = answer.supported;
         Object.keys(answer.values).forEach((k) => { o[k] = { value: answer.values[k], at: Date.now() }; });
+        // Reflex/ECA CAN 0xEC → MHD → OBD 0x52 (already decoded to %)
+        if (typeof answer.values.ethanol === 'number') ethMod.setOk(ethanol, answer.values.ethanol, 'obd52');
     }
     setTimeout(obdTick, OBD_GAP_MS);
 }
@@ -613,14 +616,16 @@ const GROUP_DIDS = (() => {      // the catalog's identifiers: the first pass's 
 })();
 let groupsRes = null, groupsAsked = 0, groupsBusy = false;
 function readEthanol() {
+    // Prefer fresh OBD 0x52 (Motive ReFlex / ECA CAN 0xEC mirrored by MHD). Else UDS 550D.
+    if (obdFresh('ethanol') && typeof obdVal('ethanol') === 'number') {
+        ethMod.setOk(ethanol, obdVal('ethanol'), 'obd52');
+        return;
+    }
     if (!tasu || Date.now() > activeUntil) return;
+    if (ethanol.src === 'obd52' && Date.now() - ethanol.at < 5000) return; // keep CAN path while fresh
     askDme('550D', [0x22, 0x55, 0x0D], (u) => {
-        if (!u || u[0] === 0x7F) return;
-        // 62 55 0D <u8>; catalog k=0.39215686
-        if (u.length >= 4 && u[0] === 0x62) {
-            ethanol.pct = +(u[3] * 0.39215686).toFixed(0);
-            ethanol.at = Date.now();
-        }
+        if (ethanol.src === 'obd52' && Date.now() - ethanol.at < 5000) return;
+        ethMod.fromUds550D(u, ethanol);
     });
 }
 
@@ -713,13 +718,13 @@ function render() {
         .set('coolantBar', { value: rnd(V.coolant()), max: ends.coolant })
         .set('intakeBar', { value: rnd(V.iat()), max: ends.intake })
         .set('batteryBar', { value: rnd(V.volt(), 1) })
-        .set('ethanolBar', { value: ethShow, label: 'Etanol' })
+        .set('ethanolBar', { value: ethShow, label: ethMod.label(ethanol) })
         .set('peakKv', { rows: [
             ['RPM peak', peaks.rpm === undefined ? '--' : String(Math.round(peaks.rpm))],
             ['Boost peak', peaks.boost === undefined ? '--' : peaks.boost.toFixed(2)],
             ['Effekt peak', peaks.hp === undefined ? '--' : String(Math.round(peaks.hp))],
             ['Vridmoment peak', peaks.nm === undefined ? '--' : String(Math.round(peaks.nm))],
-            ['Etanol', ethShow === null || ethShow === undefined ? '--' : `${ethShow} %`],
+            ['Etanol', ethShow === null || ethShow === undefined ? '--' : `${ethShow} %` + (ethanol.src ? ` · ${ethanol.src}` : '')],
         ] });
     // auto-log ring (always while polling window active)
     if (Date.now() <= activeUntil) {
@@ -731,7 +736,10 @@ function render() {
     // the page shown (tabs.js): its values only; paused (as Engine): each frame says so, no values. A read that began
     // before the last pause (its at) is not shown after it either
     const pg = screens.st.name, now = Date.now(), paused = now > activeUntil, cur = (x) => (x && x.at >= activeSince ? x : null);
-    if (pg === 'fuel') setAll(tabs.fuelView(series, fuelNow(), paused, ethShow));
+    if (pg === 'fuel') {
+        setAll(tabs.fuelView(series, fuelNow(), paused, ethShow));
+        screens.set('ethanolFuel', { value: ethShow, label: ethMod.label(ethanol) });
+    }
     if (pg === 'trips') setAll(tabs.tripsView({ tc, now, period: tripPeriod, currency, flow: tripFlow(now), running: /^(running|starting)$/.test(engineRun() || ''), paused }));
     if (pg === 'transmission') { setAll(tabs.transView(Object.assign({}, trans, { live: cur(trans.live), paused }))); transPictures(); }
     if (pg === 'dpf') setAll(dpf.view(filt, now, paused));
