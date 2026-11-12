@@ -209,59 +209,25 @@
           "name": "raceBrand",
           "rtype": "gpu",
           "gpu": "raceBrand",
-          "x": 840,
-          "y": 70,
-          "w": 1200,
+          "x": 40,
+          "y": 60,
+          "w": 900,
           "h": 120,
           "opts": {
             "title": "KINGKONG",
             "sub": "TUNING \u00b7 RACE TREE",
-            "align": "center",
+            "align": "left",
             "logo": true
-          }
-        },
-        {
-          "name": "raceCountdown",
-          "rtype": "gpu",
-          "gpu": "text",
-          "x": 640,
-          "y": 150,
-          "w": 1600,
-          "h": 140,
-          "opts": {
-            "text": "6",
-            "size": 160,
-            "font": "bold",
-            "spacing": 4,
-            "align": "center",
-            "color": "#d4af37"
-          }
-        },
-        {
-          "name": "racePhase",
-          "rtype": "gpu",
-          "gpu": "text",
-          "x": 640,
-          "y": 290,
-          "w": 1600,
-          "h": 40,
-          "opts": {
-            "text": "GET READY",
-            "size": 36,
-            "font": "bold",
-            "spacing": 4,
-            "align": "center",
-            "color": "#9a8f72"
           }
         },
         {
           "name": "raceTree",
           "rtype": "gpu",
           "gpu": "raceTree",
-          "x": 1120,
-          "y": 340,
-          "w": 640,
-          "h": 380,
+          "x": 60,
+          "y": 170,
+          "w": 780,
+          "h": 540,
           "opts": {
             "amber": "0,0,0",
             "green": false,
@@ -270,13 +236,47 @@
           }
         },
         {
+          "name": "raceCountdown",
+          "rtype": "gpu",
+          "gpu": "text",
+          "x": 960,
+          "y": 180,
+          "w": 1700,
+          "h": 200,
+          "opts": {
+            "text": "GO",
+            "size": 180,
+            "font": "bold",
+            "spacing": 4,
+            "align": "left",
+            "color": "#2fd27a"
+          }
+        },
+        {
+          "name": "racePhase",
+          "rtype": "gpu",
+          "gpu": "text",
+          "x": 960,
+          "y": 400,
+          "w": 1700,
+          "h": 44,
+          "opts": {
+            "text": "GET READY",
+            "size": 36,
+            "font": "bold",
+            "spacing": 4,
+            "align": "left",
+            "color": "#9a8f72"
+          }
+        },
+        {
           "name": "raceReaction",
           "rtype": "gpu",
           "gpu": "teleValue",
-          "x": 60,
-          "y": 360,
-          "w": 900,
-          "h": 120,
+          "x": 960,
+          "y": 470,
+          "w": 800,
+          "h": 100,
           "opts": {
             "value": "--",
             "unit": "s",
@@ -289,9 +289,9 @@
           "name": "raceReactionLabel",
           "rtype": "gpu",
           "gpu": "text",
-          "x": 60,
-          "y": 490,
-          "w": 900,
+          "x": 960,
+          "y": 580,
+          "w": 800,
           "h": 32,
           "opts": {
             "text": "REACTION",
@@ -306,15 +306,15 @@
           "name": "raceTimer",
           "rtype": "gpu",
           "gpu": "teleValue",
-          "x": 1920,
-          "y": 360,
+          "x": 1900,
+          "y": 470,
           "w": 900,
-          "h": 120,
+          "h": 100,
           "opts": {
             "value": "0.000",
             "unit": "s",
             "size": 72,
-            "align": "right",
+            "align": "left",
             "color": "#d4af37"
           }
         },
@@ -322,8 +322,8 @@
           "name": "raceTimerLabel",
           "rtype": "gpu",
           "gpu": "text",
-          "x": 1920,
-          "y": 490,
+          "x": 1900,
+          "y": 580,
           "w": 900,
           "h": 32,
           "opts": {
@@ -331,23 +331,7 @@
             "size": 26,
             "font": "bold",
             "spacing": 2,
-            "align": "right",
-            "color": "#9a8f72"
-          }
-        },
-        {
-          "name": "raceCode",
-          "rtype": "gpu",
-          "gpu": "text",
-          "x": 640,
-          "y": 680,
-          "w": 1600,
-          "h": 28,
-          "opts": {
-            "text": "Solo practice",
-            "size": 22,
-            "font": "label",
-            "align": "center",
+            "align": "left",
             "color": "#9a8f72"
           }
         },
@@ -355,10 +339,10 @@
           "name": "raceSplits",
           "rtype": "gpu",
           "gpu": "teleTable",
-          "x": 40,
-          "y": 540,
+          "x": 960,
+          "y": 620,
           "w": 900,
-          "h": 140,
+          "h": 110,
           "opts": {
             "columns": "Split:2, Time:1.4:right, Speed:1.2:right",
             "rows": "60 ft | -- | --\n0-100 | -- | --\n201 m | -- | --",
@@ -366,13 +350,29 @@
           }
         },
         {
+          "name": "raceCode",
+          "rtype": "gpu",
+          "gpu": "text",
+          "x": 60,
+          "y": 710,
+          "w": 700,
+          "h": 28,
+          "opts": {
+            "text": "Solo practice",
+            "size": 22,
+            "font": "label",
+            "align": "left",
+            "color": "#9a8f72"
+          }
+        },
+        {
           "name": "raceStartBtn",
           "rtype": "gpu",
           "gpu": "teleButton",
           "x": 2000,
-          "y": 560,
+          "y": 640,
           "w": 400,
-          "h": 88,
+          "h": 80,
           "opts": {
             "text": "Start tree",
             "kind": "primary"
@@ -384,9 +384,9 @@
           "rtype": "gpu",
           "gpu": "teleButton",
           "x": 2420,
-          "y": 560,
+          "y": 640,
           "w": 400,
-          "h": 88,
+          "h": 80,
           "opts": {
             "text": "Race again",
             "kind": "outline"
