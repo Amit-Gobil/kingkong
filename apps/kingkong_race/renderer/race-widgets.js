@@ -43,43 +43,57 @@ function ambersOf(o) {
     });
 }
 
-/** Vertical NHRA-style tree: stage dots + 3 ambers + green (red on foul). Oversized for ID8 glanceability. */
+/** Dual-column NHRA tree filling a wide left half — max lamp size for ID8 glance. */
 DRAW.raceTree = (cv, t, b, o) => {
-    const pad = 28;
+    const pad = 10;
     const x0 = b.x + pad;
     const y0 = b.y + pad;
     const w = Math.max(80, b.w - pad * 2);
     const h = Math.max(80, b.h - pad * 2);
-    cv.roundRect(b.x, b.y, b.w, b.h, 20, HOUSING);
-    cv.strokeRoundRect(b.x, b.y, b.w, b.h, 20, 3, EDGE);
+    cv.roundRect(b.x, b.y, b.w, b.h, 14, HOUSING);
+    cv.strokeRoundRect(b.x, b.y, b.w, b.h, 14, 3, EDGE);
 
     const ambers = ambersOf(o);
     const green = !!o.green;
     const foul = !!o.foul;
     const staged = o.staged !== false;
 
-    const cx = x0 + w / 2;
-    const n = 5; // stage row + 3 amber + green
-    const gap = Math.max(10, Math.min(22, h * 0.035));
-    // Fill most of the box — large lamps so the driver can see them at a glance
-    const r = Math.min(w * 0.42, (h - gap * n) / (n + 1) / 2);
-    let y = y0 + r + 6;
+    // Two columns so a wide left-half box is filled with light, not empty gutter.
+    const colGap = Math.max(12, w * 0.05);
+    const colW = (w - colGap) / 2;
+    const cxL = x0 + colW / 2;
+    const cxR = x0 + colW + colGap + colW / 2;
 
-    const sr = r * 0.52;
-    cv.circle(cx - sr * 1.55, y, sr, staged ? GOLD : AMBER_OFF);
-    cv.circle(cx + sr * 1.55, y, sr, staged ? GOLD : AMBER_OFF);
-    y += r * 2 + gap;
+    const gap = Math.max(4, Math.min(10, h * 0.014));
+    // Stage row is compact; spend height budget on 3 ambers + green.
+    const stageBand = Math.min(h * 0.14, 90);
+    const mainH = h - stageBand;
+    const nMain = 4; // 3 amber + green
+    const r = Math.min(colW * 0.48, (mainH - gap * (nMain - 1)) / (nMain * 2));
 
+    const lamp = (cx, yy, rad, onCol, offCol, lit, hi) => {
+        cv.circle(cx, yy, rad, lit ? onCol : offCol);
+        if (lit && hi) cv.circle(cx, yy, rad * 0.4, hi);
+    };
+
+    const sr = Math.min(stageBand * 0.38, r * 0.5);
+    let y = y0 + stageBand * 0.5;
+    lamp(cxL, y, sr, GOLD, AMBER_OFF, staged, null);
+    lamp(cxR, y, sr, GOLD, AMBER_OFF, staged, null);
+
+    y = y0 + stageBand + r;
     for (let i = 0; i < 3; i++) {
-        cv.circle(cx, y, r, ambers[i] ? AMBER_ON : AMBER_OFF);
-        if (ambers[i]) cv.circle(cx, y, r * 0.42, '#ffe08a');
+        const lit = ambers[i];
+        lamp(cxL, y, r, AMBER_ON, AMBER_OFF, lit, '#ffe08a');
+        lamp(cxR, y, r, AMBER_ON, AMBER_OFF, lit, '#ffe08a');
         y += r * 2 + gap;
     }
 
     const go = foul ? RED_ON : (green ? GREEN_ON : GREEN_OFF);
-    cv.circle(cx, y, r * 1.05, go);
-    if (green && !foul) cv.circle(cx, y, r * 0.45, '#b8ffd0');
-    if (foul) cv.circle(cx, y, r * 0.45, '#ffb0a8');
+    const hi = foul ? '#ffb0a8' : '#b8ffd0';
+    const litGo = green || foul;
+    lamp(cxL, y, r * 1.08, go, GREEN_OFF, litGo, hi);
+    lamp(cxR, y, r * 1.08, go, GREEN_OFF, litGo, hi);
 };
 
 /** Official logo (logo.png) with optional subtitle — not cardata teleShell + gauge. */
