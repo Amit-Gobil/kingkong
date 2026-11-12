@@ -101,7 +101,7 @@ function clearQr() {
 }
 
 function showQr() {
-    if (!lastRun || !screens) { qrNote = 'Ingen körning att dela ännu'; return; }
+    if (!lastRun || !screens) { qrNote = 'No run to share yet'; return; }
     clearQr();
     const url = shareUrl();
     const q = qrcodegen.QrCode.encodeText(url, qrcodegen.QrCode.Ecc.MEDIUM);
@@ -171,10 +171,10 @@ function startBus() {
 
 // ---- UI model / render ----
 function statusLine() {
-    if (!signal) return 'INGEN FARTSIGNAL';
-    if (timer.state === 'ready') return 'REDO · stå stilla ≥1 s, kör';
-    if (timer.state === 'run') return 'TIDTAGNING';
-    if (timer.state === 'wait') return 'STANNA BILEN för att arma';
+    if (!signal) return 'NO SPEED SIGNAL';
+    if (timer.state === 'ready') return 'READY · hold still ≥1 s, then go';
+    if (timer.state === 'run') return 'TIMING';
+    if (timer.state === 'wait') return 'STOP THE CAR to arm';
     return timer.state.toUpperCase();
 }
 
@@ -199,23 +199,37 @@ function bestRows() {
 }
 
 function racePhaseText(m) {
-    if (m.phase === 'idle') return m.canStart ? 'GET READY' : 'STANNA BILEN';
+    if (m.phase === 'idle') return m.canStart ? 'TAP START TREE' : 'STOP THE CAR';
     if (m.phase === 'ready') return 'GET READY';
-    if (m.phase === 'count') return 'TREE';
+    if (m.phase === 'count') return 'WATCH THE TREE';
     if (m.phase === 'armed') return 'GO!';
     if (m.phase === 'run') return 'RUN';
-    if (m.phase === 'foul') return 'FOUL';
+    if (m.phase === 'foul') return 'FOUL — EARLY';
     if (m.phase === 'result') return 'RESULT';
     return String(m.phase || '').toUpperCase();
 }
 
-function raceCueText(m) {
-    if (m.phase === 'ready' && m.ready != null) return m.ready.toFixed(0) + '.00s';
-    if (m.phase === 'armed') return 'GREEN';
-    if (m.phase === 'foul') return 'EARLY';
-    if (m.phase === 'count') return 'WAIT';
-    if (m.phase === 'idle') return m.canStart ? '0.00s' : 'NO SPEED';
-    return '0.00s';
+/** Huge center readout: countdown digits, then GO / FOUL. */
+function raceCountdownText(m) {
+    if (m.phase === 'ready' && m.ready != null) return String(Math.max(0, m.ready | 0));
+    if (m.phase === 'count') {
+        const a = (m.lights && m.lights.amber) || [];
+        const n = (a[0] ? 1 : 0) + (a[1] ? 1 : 0) + (a[2] ? 1 : 0);
+        return n ? String(n) : '•';
+    }
+    if (m.phase === 'armed') return 'GO';
+    if (m.phase === 'foul') return 'FOUL';
+    if (m.phase === 'run') return 'RUN';
+    if (m.phase === 'result') return 'DONE';
+    if (m.phase === 'idle') return m.canStart ? '—' : 'STOP';
+    return '—';
+}
+
+function raceCountdownColor(m) {
+    if (m.phase === 'armed') return '#2fd27a';
+    if (m.phase === 'foul') return '#e23b2f';
+    if (m.phase === 'count') return '#ffb000';
+    return '#d4af37';
 }
 
 function syncTabs() {
@@ -257,35 +271,42 @@ function render() {
         staged: lights.staged !== false,
     });
     screens.set('racePhase', { text: racePhaseText(rm) });
-    screens.set('raceCue', { text: raceCueText(rm) });
-    screens.set('raceCode', { text: 'Rum ' + (rm.code || '----') + ' · solo practice' });
+    screens.set('raceCountdown', {
+        text: raceCountdownText(rm),
+        size: 160,
+        font: 'bold',
+        spacing: 4,
+        align: 'center',
+        color: raceCountdownColor(rm),
+    });
+    screens.set('raceCode', { text: 'Room ' + (rm.code || '----') + ' · solo practice' });
     screens.set('raceReaction', {
         value: rm.reaction != null ? rm.reaction.toFixed(3) : (rm.phase === 'foul' ? 'FOUL' : '--'),
         unit: rm.reaction != null ? 's' : '',
-        size: 64,
+        size: 72,
         color: rm.phase === 'foul' ? '#e23b2f' : '#d4af37',
     });
     screens.set('raceTimer', {
         value: (rm.elapsed || 0).toFixed(3),
         unit: 's',
-        size: 120,
+        size: 72,
         color: '#d4af37',
     });
     screens.set('raceSplits', { rows: splitTableRows(rm.result, rm.trap, {}) });
     screens.set('raceStartBtn', {
-        text: 'Starta träd',
+        text: 'Start tree',
         kind: 'primary',
         disabled: !rm.canStart && rm.phase === 'idle',
     });
     screens.set('raceAgainBtn', { text: 'Race again', kind: 'outline', disabled: false });
 
     screens.set('onlineNote', {
-        text: 'Online H2H kommer senare: rumkod, gemensam start, lokal tidtagning, uppladdning. Ingen server i denna version.',
+        text: 'Coming later: room code, shared start, local timing, upload. No server in this version.',
     });
-    screens.set('onlineCode', { text: 'Din kod (förberedd): ' + rm.code });
+    screens.set('onlineCode', { text: 'Your code (prepared): ' + rm.code });
 
-    screens.set('rolloutRow', { on: !!settings.rollout, label: '1-ft rollout', sub: 'Klocka startar efter 0,30 m' });
-    screens.set('qrNote', { text: qrNote || (lastRun ? 'Tryck Visa QR för senaste körning' : 'Kör en drag först') });
+    screens.set('rolloutRow', { on: !!settings.rollout, label: '1-ft rollout', sub: 'Clock starts after 0.30 m' });
+    screens.set('qrNote', { text: qrNote || (lastRun ? 'Tap Show QR for last run' : 'Run a drag first') });
     screens.set('shareUrl', { text: lastRun ? shareUrl() : '--' });
 
     syncTabs();
