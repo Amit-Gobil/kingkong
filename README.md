@@ -4,7 +4,7 @@
 
 Package id: `kingkong_cardata`  
 Look: black + gold + Kingkong Tuning logo  
-Tabs: **Engine** · **Fuel** · **Trips** · **Settings**
+Tabs: **Engine** · **Fuel** · **Trips** · **Transmission** · **Details** · **Settings**
 
 Live values: RPM, boost, effekt, vridmoment, oil / coolant / intake temps, battery.
 
@@ -16,12 +16,9 @@ You already need **[MGU Store](https://github.com/robertnisipeanu/mgu-store)** a
 
 1. In the car, open **Store → Settings → Add source** (or edit the existing `Amit-Gobil/kingkong` source).
 2. Enter GitHub source: **`Amit-Gobil/kingkong`**
-3. Channel — pick **one**:
-   - **After this PR is merged:** **Gren / Branches → `main`**
-   - **Until then (interim):** **Gren / Branches → `cursor/kingkong-cardata-app-f649`**  
-     (`main` is still the empty initial commit and has **no** `mgu-repo.json` — Store shows *no mgu-repo.json* / *0 komponenter*.)
+3. Channel: **Gren / Branches → `main`** (always install from `main`).
 4. **Kontrollera nu** (Check now). Kingkong (`kingkong_cardata`) should list.
-5. Install **Kingkong**, then on **iDrive 8** restart the head unit (Store → Settings → **Restart head unit**).
+5. Install / update **Kingkong**, then on **iDrive 8** restart the head unit (Store → Settings → **Restart head unit**).
 6. Open **Kingkong** from All apps.
 
 ### Requirements
