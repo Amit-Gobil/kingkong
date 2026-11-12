@@ -1,7 +1,7 @@
 'use strict';
 /*
  * kingkong_cardata: Kingkong Tuning live values (tile "Kingkong") for iDrive 8.
- * Screens (1.1.0): drawn by the GPU renderer (mgu-renderd, scripts/renderd), designed in the HMI UI builder:
+ * Screens (1.2.0 Quiet Dials): drawn by the GPU renderer (mgu-renderd, scripts/renderd), designed in the HMI UI builder:
  * apps/hmi-ui-builder/projects/car-data.json, exported into this folder (rhmiData/ = one empty RHMI host state
  * per screen, renderer/ = screens.json + the builder's runtime). Tabs across the top of each screen (1.2.0):
  *   engine (entry): engine speed + boost (bars, peak hold), speed + gear, power + torque, oil /
@@ -76,6 +76,7 @@ const tabs = require('./tabs.js');
 const dpf = require('./dpf.js');
 const { createGuard } = require('./tasu-guard.js');
 const { createHost } = require('./online-host.js');
+const { RingLog } = require('./logbuf.js');
 
 const LOG = '[kingkong_cardata]';
 
@@ -184,6 +185,7 @@ const obdFresh = (k) => o[k] && 'value' in o[k] && Date.now() - o[k].at < OBD_FR
 const busC = (r, cal) => (valid(r, 255) ? cal(r) : undefined);
 let gearK = CAL.gearK;
 const boostTgt = { kpa: null, at: 0 };   // the boost target from 22 4AB0 (absolute kPa): Fuel
+const ethanol = { pct: null, at: 0 };    // UDS DID 550D (engine-groups-catalog), shown even when null
 const V = {
     // the bus while it answers (polled every 50-100 ms), OBD (a round trip per value) only as fallback
     rpm: () => (busFresh('CDS.statusEngineSpeed2') && valid(raw.rpm, 65535) ? CAL.rpm(raw.rpm) : obdVal('rpm')),
@@ -206,6 +208,7 @@ const V = {
     odo: () => (valid(raw.odo, 16777215) ? raw.odo : undefined),
     tank: () => (valid(raw.tank, 255) ? raw.tank : undefined),
     // the boost target: 22 4AB0 while fresh, else OBD 0x70's commanded pressure; minus the outside pressure, in bar
+    ethanol: () => ethanol.pct,   // null until 550D answers; still shown as -- on Engine/Fuel
     boostT: () => {
         const abs = Date.now() - boostTgt.at < 3000 ? boostTgt.kpa : obdFresh('boostT') ? obdVal('boostT') : undefined;
         return abs === undefined || abs === null || obdVal('baro') === undefined ? undefined : (abs - obdVal('baro')) / 100;
@@ -453,17 +456,22 @@ const TAB = { engine: 'Engine', fuel: 'Fuel', trips: 'Trips', transmission: 'Tra
 // Kingkong tabs: Engine / Fuel / Trips / Transmission / Details / Settings
 const shownPages = () => ['engine', 'fuel', 'trips', 'transmission', 'details', 'settings'];
 let screens = null, tabsShown = '';
-function syncTabs() {          // every page's frame: the tabs shown, its own one selected
+function syncTabs() {          // bottom teleTabBar + shell (tabs hidden up top)
     const s = shownPages(), t = s.map((p) => TAB[p]).join(', ');
-    if (t === tabsShown) return;
     tabsShown = t;
-    PAGES.forEach((p) => screens.set(`${p}Menu`, { tabs: t, sel: Math.max(0, s.indexOf(p)) }));
+    PAGES.forEach((p) => {
+        const sel = Math.max(0, s.indexOf(p));
+        screens.set(`${p}Menu`, { tabs: t, sel, hideTabs: true });
+        screens.set(`${p}Tabs`, { tabs: t, sel });
+    });
 }
 
 // ---- settings: where each bar ends (the settings page's sliders), saved in the app's data folder ----------
 // The red zone is the last 10 % of a bar (user decision); the torque bar ends where the slider says, whatever
 // rated torque the car reports. key: [default, slider lowest, highest, step]; settings row = <key>Max.
-const SETTINGS_FILE = path.join(__dirname, '..', '..', 'data', 'settings.json');   // the app's data folder (the Store's)
+const DATA_DIR = path.join(__dirname, '..', '..', 'data');
+const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');   // the app's data folder (the Store's)
+const ring = new RingLog(DATA_DIR);
 const RANGES = { rpm: [8000, 5000, 10000, 500], boost: [2.5, 0.5, 4, 0.25], power: [500, 200, 1000, 50], torque: [700, 300, 1200, 50],
     oil: [150, 100, 180, 5], coolant: [130, 100, 160, 5], intake: [80, 40, 120, 5] };
 const UNITS = { rpm: 'rpm', boost: 'bar', power: 'hp', torque: 'Nm' };     // the bars with a red zone
@@ -604,6 +612,18 @@ const GROUP_DIDS = (() => {      // the catalog's identifiers: the first pass's 
     return s.size;
 })();
 let groupsRes = null, groupsAsked = 0, groupsBusy = false;
+function readEthanol() {
+    if (!tasu || Date.now() > activeUntil) return;
+    askDme('550D', [0x22, 0x55, 0x0D], (u) => {
+        if (!u || u[0] === 0x7F) return;
+        // 62 55 0D <u8>; catalog k=0.39215686
+        if (u.length >= 4 && u[0] === 0x62) {
+            ethanol.pct = +(u[3] * 0.39215686).toFixed(0);
+            ethanol.at = Date.now();
+        }
+    });
+}
+
 function readGroups() {
     if (groupsBusy || !onPage('details')) return;
     groupsBusy = true; groupsAsked = 0;
@@ -676,24 +696,42 @@ function render() {
     const rpm = rnd(V.rpm()), boost = rnd(V.boost(), 2), nm = rnd(V.torque()), kmh = rnd(V.speed());
     const hp = rnd(V.power() === undefined ? undefined : V.power() * 1.341);
     // a tick (and its number) every 1000 rpm, 0.5 bar, 100 hp / Nm; a bar end between two of them ends the scale there
-    screens.set('rpmBar', { value: rpm, peak: peak('rpm', rpm), label: withPeak('rpm'), max: ends.rpm, limit: redFrom('rpm'), ticks: ends.rpm / 1000 })
-        .set('boostBar', { value: boost, peak: peak('boost', boost), label: withPeak('boost'), max: ends.boost, limit: redFrom('boost'), ticks: ends.boost / 0.5 })
+    const eth = V.ethanol();
+    const ethShow = eth === null || eth === undefined ? null : eth;   // teleMiniTile shows blank/null as --
+    peak('rpm', rpm); peak('boost', boost); peak('hp', hp); peak('nm', nm);
+    screens.set('rpmBar', { value: rpm, max: ends.rpm, redFrom: redFrom('rpm'), ticks: Math.max(4, ends.rpm / 1000),
+            div: 1000, label: 'RPM', unit: 'rpm', decimals: 0 })
+        .set('boostBar', { value: boost, max: ends.boost, redFrom: redFrom('boost'), ticks: 5,
+            label: 'Boost', unit: 'bar', decimals: 2 })
         .set('powerBar', { value: hp, peak: peak('hp', hp), label: withPeak('hp'), max: ends.power, limit: redFrom('power'), ticks: ends.power / 100 })
         .set('torqueBar', { value: nm, peak: peak('nm', nm), label: withPeak('nm'), max: ends.torque, limit: redFrom('torque'), ticks: ends.torque / 100 })
-        .set('speed', { value: kmh === undefined ? '--' : String(kmh), color: kmh === undefined ? 'dim' : '' })     // teleValue: text
+        .set('speed', { value: kmh === undefined ? '--' : String(kmh), color: kmh === undefined ? 'dim' : '' })
         .set('gear', { text: gearShown(), color: rpm === undefined ? '#4a4f57' : '#ffb020' })
-        // polling paused (30 min after the last screen change, or hidden): the frame says so, not "Live"; else no engine
-        // speed from the bus or OBD: the DME is not answering (yet) - the frame says so (p4 engine-nodata)
         .set('engineMenu', Date.now() > activeUntil ? { chips: [['Paused', 'warn']], sub: 'Paused · open a tab to resume' }
-            : rpm === undefined ? { chips: [['DME not answering', 'crit']], sub: 'Waiting for the DME' } : { chips: [], sub: 'Live from the DME' })
+            : rpm === undefined ? { chips: [['DME not answering', 'crit']], sub: 'Waiting for the DME' } : { chips: [], sub: 'Quiet Dials · live' })
         .set('oilBar', { value: rnd(V.oil()), max: ends.oil })
         .set('coolantBar', { value: rnd(V.coolant()), max: ends.coolant })
         .set('intakeBar', { value: rnd(V.iat()), max: ends.intake })
-        .set('batteryBar', { value: rnd(V.volt(), 1) });
+        .set('batteryBar', { value: rnd(V.volt(), 1) })
+        .set('ethanolBar', { value: ethShow, label: 'Etanol' })
+        .set('peakKv', { rows: [
+            ['RPM peak', peaks.rpm === undefined ? '--' : String(Math.round(peaks.rpm))],
+            ['Boost peak', peaks.boost === undefined ? '--' : peaks.boost.toFixed(2)],
+            ['Effekt peak', peaks.hp === undefined ? '--' : String(Math.round(peaks.hp))],
+            ['Vridmoment peak', peaks.nm === undefined ? '--' : String(Math.round(peaks.nm))],
+            ['Etanol', ethShow === null || ethShow === undefined ? '--' : `${ethShow} %`],
+        ] });
+    // auto-log ring (always while polling window active)
+    if (Date.now() <= activeUntil) {
+        ring.sample({
+            rpm, v: kmh, tq: nm, boost, ect: rnd(V.coolant()), oil: rnd(V.oil()), batt: rnd(V.volt(), 1),
+            gear: gearShown(), mode: STAGENAME[raw.viStage] || '', run: engineRun(), ethanol: ethShow,
+        });
+    }
     // the page shown (tabs.js): its values only; paused (as Engine): each frame says so, no values. A read that began
     // before the last pause (its at) is not shown after it either
     const pg = screens.st.name, now = Date.now(), paused = now > activeUntil, cur = (x) => (x && x.at >= activeSince ? x : null);
-    if (pg === 'fuel') setAll(tabs.fuelView(series, fuelNow(), paused));
+    if (pg === 'fuel') setAll(tabs.fuelView(series, fuelNow(), paused, ethShow));
     if (pg === 'trips') setAll(tabs.tripsView({ tc, now, period: tripPeriod, currency, flow: tripFlow(now), running: /^(running|starting)$/.test(engineRun() || ''), paused }));
     if (pg === 'transmission') { setAll(tabs.transView(Object.assign({}, trans, { live: cur(trans.live), paused }))); transPictures(); }
     if (pg === 'dpf') setAll(dpf.view(filt, now, paused));
@@ -703,6 +741,8 @@ function render() {
     const auto = (k) => (k === 'rpm' && !('rpm' in custom) && engineType() ? ` · ${engineType()}` : '');
     Object.keys(RANGES).forEach((k) => screens.set(`${k}Max`, UNITS[k] ? { value: ends[k], sub: `Red zone from ${redFrom(k)} ${UNITS[k]}${auto(k)}` } : { value: ends[k] }));
     screens.set('priceText', { text: tc.price ? tc.price.toFixed(2) : '--' }).set('currencyRow', { text: currency });
+    const st = ring.status();
+    screens.set('logStatus', { text: st.note || `Ringbuffer · ${st.mb} MB` });
 }
 
 // the tabs: engine is the app's first screen, the other pages open over it (BACK returns to engine)
@@ -716,10 +756,12 @@ function onChange(name, o) {
     const k = name.replace(/Max$/, '');
     if (k !== name && RANGES[k]) { custom[k] = snap(k, o.value); saveSettings(); render(); return; }   // a settings slider: by hand
     if (name === 'tripPeriod') { tripPeriod = o.sel; render(); return; }                                 // Trips: today / 7 / 30 days
-    const from = name.replace(/Menu$/, '');
+    let from = name.replace(/Menu$/, '');
+    if (from === name) from = name.replace(/Tabs$/, '');
     if (from === name || PAGES.indexOf(from) < 0) return;
-    const shown = shownPages(), to = shown[o.sel];       // (o is the element's opts: read before the set below)
-    screens.set(name, { sel: shown.indexOf(from) });     // this page's menu keeps showing this page
+    const shown = shownPages(), to = shown[o.sel];
+    screens.set(`${from}Menu`, { sel: shown.indexOf(from), hideTabs: true });
+    screens.set(`${from}Tabs`, { sel: shown.indexOf(from) });
     goTo(to);
 }
 
@@ -774,6 +816,11 @@ function startScreens(rhmiApp, hosts) {
             saveTrips();
         }
         if (e === 'currency') { currency = CURRENCIES[(CURRENCIES.indexOf(currency) + 1) % CURRENCIES.length]; saveSettings(); }
+        if (e === 'sendLog') {
+            const r = ring.exportPackage();
+            log(`skicka-logg: ${r.note}`);
+            screens.set('logStatus', { text: r.note });
+        }
         render();
     });
     // the user left for the HMI (touched it): leave the host states too, or the HMI would show their empty pages
@@ -796,10 +843,10 @@ createHost({
             for (const k of Object.keys(hits)) { rates[k] = hits[k] / 5; hits[k] = 0; }
         }, 5000);
         setInterval(tripTick, 500);                                                 // Trips, also with the screens closed
-        setInterval(() => { readFuelRef(); readBoostTarget(); readTrans(); readDpf(); }, 1000);   // each only while it is needed
+        setInterval(() => { readFuelRef(); readBoostTarget(); readEthanol(); readTrans(); readDpf(); }, 1000);
         setInterval(readGroups, 2000);
         setInterval(() => { sampleSeries(); if (onPage('dpf')) filt.sample(Date.now()); }, 5000);
     },
     onHidden: () => { activeUntil = 0; },
-    onShutdown: () => { if (tc.ver !== tripsSaved) saveTrips(); },          // the trip so far is kept (spec 6)
+    onShutdown: () => { if (tc.ver !== tripsSaved) saveTrips(); try { ring.close(); } catch (e) { /* */ } },
 });
