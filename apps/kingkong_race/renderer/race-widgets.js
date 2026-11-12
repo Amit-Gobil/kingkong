@@ -26,15 +26,15 @@ function ambersOf(o) {
     });
 }
 
-/** Vertical NHRA-style tree: stage dots + 3 ambers + green (red on foul). */
+/** Vertical NHRA-style tree: stage dots + 3 ambers + green (red on foul). Oversized for ID8 glanceability. */
 DRAW.raceTree = (cv, t, b, o) => {
-    const pad = 18;
+    const pad = 28;
     const x0 = b.x + pad;
     const y0 = b.y + pad;
-    const w = Math.max(40, b.w - pad * 2);
-    const h = Math.max(40, b.h - pad * 2);
-    cv.roundRect(b.x, b.y, b.w, b.h, 12, HOUSING);
-    cv.strokeRoundRect(b.x, b.y, b.w, b.h, 12, 2, EDGE);
+    const w = Math.max(80, b.w - pad * 2);
+    const h = Math.max(80, b.h - pad * 2);
+    cv.roundRect(b.x, b.y, b.w, b.h, 20, HOUSING);
+    cv.strokeRoundRect(b.x, b.y, b.w, b.h, 20, 3, EDGE);
 
     const ambers = ambersOf(o);
     const green = !!o.green;
@@ -42,25 +42,25 @@ DRAW.raceTree = (cv, t, b, o) => {
     const staged = o.staged !== false;
 
     const cx = x0 + w / 2;
-    const n = 5; // 2 stage + 3 amber, then green below
-    const gap = 14;
-    const r = Math.min(w * 0.32, (h - gap * (n)) / (n + 1) / 2);
-    let y = y0 + r + 8;
+    const n = 5; // stage row + 3 amber + green
+    const gap = Math.max(10, Math.min(22, h * 0.035));
+    // Fill most of the box — large lamps so the driver can see them at a glance
+    const r = Math.min(w * 0.42, (h - gap * n) / (n + 1) / 2);
+    let y = y0 + r + 6;
 
-    // pre-stage / stage (small)
-    const sr = r * 0.55;
-    cv.circle(cx - sr * 1.4, y, sr, staged ? GOLD : AMBER_OFF);
-    cv.circle(cx + sr * 1.4, y, sr, staged ? GOLD : AMBER_OFF);
+    const sr = r * 0.52;
+    cv.circle(cx - sr * 1.55, y, sr, staged ? GOLD : AMBER_OFF);
+    cv.circle(cx + sr * 1.55, y, sr, staged ? GOLD : AMBER_OFF);
     y += r * 2 + gap;
 
     for (let i = 0; i < 3; i++) {
         cv.circle(cx, y, r, ambers[i] ? AMBER_ON : AMBER_OFF);
-        if (ambers[i]) cv.circle(cx, y, r * 0.45, '#ffe08a');
+        if (ambers[i]) cv.circle(cx, y, r * 0.42, '#ffe08a');
         y += r * 2 + gap;
     }
 
     const go = foul ? RED_ON : (green ? GREEN_ON : GREEN_OFF);
-    cv.circle(cx, y, r, go);
+    cv.circle(cx, y, r * 1.05, go);
     if (green && !foul) cv.circle(cx, y, r * 0.45, '#b8ffd0');
     if (foul) cv.circle(cx, y, r * 0.45, '#ffb0a8');
 };
