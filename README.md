@@ -4,7 +4,7 @@
 
 Package id: `kingkong_cardata`  
 Look: black + gold + Kingkong Tuning logo  
-Tabs: **Engine** · **Fuel** · **Trips** · **Transmission** · **Details** · **Settings**
+Tabs: **Engine** · **Fuel** · **Transmission** · **Adjust** · **Settings** (Trips/Details hidden via flag)
 
 Live values: RPM, boost, effekt, vridmoment, oil / coolant / intake temps, battery.
 

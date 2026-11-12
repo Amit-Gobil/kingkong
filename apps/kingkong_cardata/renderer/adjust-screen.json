@@ -18,8 +18,8 @@
       "opts": {
         "app": "Kingkong",
         "icon": "gauge",
-        "tabs": "Engine, Fuel, Trips, Transmission, Adjust, Details, Settings",
-        "sel": 4,
+        "tabs": "Engine, Fuel, Transmission, Adjust, Settings",
+        "sel": 3,
         "chips": "",
         "title": "Adjust",
         "sub": "Maps · exhaust flap · Max Cooling",
@@ -288,8 +288,8 @@
       "w": 2880,
       "h": 80,
       "opts": {
-        "tabs": "Engine, Fuel, Trips, Transmission, Adjust, Details, Settings",
-        "sel": 4
+        "tabs": "Engine, Fuel, Transmission, Adjust, Settings",
+        "sel": 3
       }
     }
   ]

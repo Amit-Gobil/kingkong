@@ -1,8 +1,8 @@
 {
   "id": "kingkong_cardata",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "title": "Kingkong",
-  "description": "Kingkong Quiet Dials 1.2.5: Adjust tab (maps 1–4, MHD Max Cooling, exhaust flap; Iterio Live Adjustments logic). Fuel etanol, Skicka-logg.",
+  "description": "Kingkong Quiet Dials 1.2.6: Trips/Details tabs hidden (flag). Engine, Fuel, Transmission, Adjust, Settings. Etanol, Skicka-logg.",
   "mguHmi": [
     "ID8"
   ],
