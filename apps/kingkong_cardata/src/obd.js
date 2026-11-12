@@ -23,7 +23,7 @@ const PIDS = {
     0x45: ['throttleRel', 1, (d) => d[0] * 100 / 255],        // %, 0 = closed
     0x46: ['ambient', 1, (d) => d[0] - 40],                   // °C
     0x49: ['pedalD', 1, (d) => d[0] * 100 / 255],             // % absolute (≈15 at rest)
-    0x52: ['ethanol', 1, (d) => d[0] * 100 / 255],             // % ethanol (Reflex/CAN via MHD)
+    0x52: ['ethanol', 1, (d) => d[0]],                         // raw byte; ethanol.js decodes
     0x5C: ['oil', 1, (d) => d[0] - 40],                       // °C
     0x5A: ['pedalRel', 1, (d) => d[0] * 100 / 255],           // %, 0 = released
     0x5E: ['fuelRate', 2, (d) => (d[0] * 256 + d[1]) * 0.05], // l/h, the engine's fuel rate (1.3.0: a reference for Trips)
