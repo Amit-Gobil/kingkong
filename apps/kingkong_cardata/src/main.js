@@ -186,7 +186,8 @@ const obdFresh = (k) => o[k] && 'value' in o[k] && Date.now() - o[k].at < OBD_FR
 const busC = (r, cal) => (valid(r, 255) ? cal(r) : undefined);
 let gearK = CAL.gearK;
 const boostTgt = { kpa: null, at: 0 };   // the boost target from 22 4AB0 (absolute kPa): Fuel
-const ethanol = ethMod.createEthanol();  // Reflex/CAN (OBD 52) then UDS 550D
+const ethanol = ethMod.createEthanol();  // Reflex/CAN mirrors then UDS 550D
+let ethObdQueued = false, ethUdsTurn = 0;
 const V = {
     // the bus while it answers (polled every 50-100 ms), OBD (a round trip per value) only as fallback
     rpm: () => (busFresh('CDS.statusEngineSpeed2') && valid(raw.rpm, 65535) ? CAL.rpm(raw.rpm) : obdVal('rpm')),
@@ -395,15 +396,17 @@ function finishObd(answer) {
     obdCount++;
     hits.OBD = (hits.OBD || 0) + 1;
     if (answer.err) {
+        if (pids && pids.indexOf(0x52) >= 0) { ethObdQueued = false; ethanol.debug.obd52 = 'err ' + String(answer.err).slice(0, 48); }
         if (pids.length > 1 && pids[0] !== 0x00 && /NRC|timeout/.test(answer.err)) multi = false;
-        else if (/NRC 7F 01 (12|31)/.test(answer.err)) pids.forEach((p) => refused.add(`${target}:${p}`));
-        if (target === DME && pids.length === 1) o[obd.key(pids[0])] = { err: answer.err };
+        else if (/NRC 7F 01 (12|31)/.test(answer.err)) pids.forEach((p) => { if (p !== 0x52) refused.add(target + ':' + p); });
+        if (target === DME && pids.length === 1 && pids[0] !== 0x52) o[obd.key(pids[0])] = { err: answer.err };
         if (pids[0] === 0x00) supported[target] = supported[target] || [];   // ECU has no OBD: ask nothing more
     } else {
+        if (pids && pids.indexOf(0x52) >= 0) ethObdQueued = false;
         if (answer.supported.length || pids[0] === 0x00) supported[target] = answer.supported;
         Object.keys(answer.values).forEach((k) => { o[k] = { value: answer.values[k], at: Date.now() }; });
-        // Reflex/ECA CAN 0xEC → MHD → OBD 0x52 (already decoded to %)
-        if (typeof answer.values.ethanol === 'number') ethMod.setOk(ethanol, answer.values.ethanol, 'obd52');
+        // Reflex/ECA CAN → MHD → OBD 0x52 (raw byte; ethanol.js decodes)
+        if (typeof answer.values.ethanol === 'number') ethMod.fromObd52Byte(answer.values.ethanol, ethanol);
     }
     setTimeout(obdTick, OBD_GAP_MS);
 }
@@ -616,17 +619,31 @@ const GROUP_DIDS = (() => {      // the catalog's identifiers: the first pass's 
 })();
 let groupsRes = null, groupsAsked = 0, groupsBusy = false;
 function readEthanol() {
-    // Prefer fresh OBD 0x52 (Motive ReFlex / ECA CAN 0xEC mirrored by MHD). Else UDS 550D.
+    // Force OBD 01 52 even when missing from the DME support bitmap; also UDS F452 + 550D.
+    // PT-CAN frames (0xEC/0xED/0x334/0x4CB) are ingested by MHD — HU reads DME mirrors only.
+    if (Date.now() > activeUntil) return;
     if (obdFresh('ethanol') && typeof obdVal('ethanol') === 'number') {
-        ethMod.setOk(ethanol, obdVal('ethanol'), 'obd52');
-        return;
+        ethMod.fromObd52Byte(obdVal('ethanol'), ethanol);
     }
-    if (!tasu || Date.now() > activeUntil) return;
-    if (ethanol.src === 'obd52' && Date.now() - ethanol.at < 5000) return; // keep CAN path while fresh
-    askDme('550D', [0x22, 0x55, 0x0D], (u) => {
-        if (ethanol.src === 'obd52' && Date.now() - ethanol.at < 5000) return;
-        ethMod.fromUds550D(u, ethanol);
-    });
+    if (tasu && !ethObdQueued) {
+        ethObdQueued = true;
+        queue.push({ target: DME, pids: [0x52] });
+        if (!pending) setTimeout(obdTick, 0);
+    }
+    if (!tasu) return;
+    if (ethanol.pct != null && Date.now() - ethanol.at < 4000) return;
+    ethUdsTurn++;
+    if (ethUdsTurn % 2 === 1) {
+        askDme('F452', [0x22, 0xF4, 0x52], (u) => {
+            if (ethanol.pct != null && Date.now() - ethanol.at < 4000) return;
+            ethMod.fromUdsF452(u, ethanol);
+        });
+    } else {
+        askDme('550D', [0x22, 0x55, 0x0D], (u) => {
+            if (ethanol.pct != null && Date.now() - ethanol.at < 4000) return;
+            ethMod.fromUds550D(u, ethanol);
+        });
+    }
 }
 
 function readGroups() {
@@ -751,6 +768,7 @@ function render() {
     screens.set('priceText', { text: tc.price ? tc.price.toFixed(2) : '--' }).set('currencyRow', { text: currency });
     const st = ring.status();
     screens.set('logStatus', { text: st.note || `Ringbuffer · ${st.mb} MB` });
+    screens.set('ethDebug', { rows: ethMod.debugRows(ethanol) });
 }
 
 // the tabs: engine is the app's first screen, the other pages open over it (BACK returns to engine)
