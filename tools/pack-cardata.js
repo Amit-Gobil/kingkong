@@ -90,6 +90,32 @@ const detailsIdx = design.screens.findIndex((s) => s.name === 'details');
 if (detailsIdx < 0) die('details screen missing');
 design.screens.splice(detailsIdx, 0, adjustScreen);
 
+// Static placeholder copy in screens.json (English-only UI).
+const EN_TEXT = {
+  Effekt: 'Power',
+  Vridmoment: 'Torque',
+  Etanol: 'Ethanol',
+  ETANOL: 'ETHANOL',
+  'Effekt peak': 'Power peak',
+  'Vridmoment peak': 'Torque peak',
+  'väntar på DME…': 'waiting for DME…',
+  'Skicka-logg': 'Send log',
+  SUPPORTLOGG: 'SUPPORT LOG',
+  'Ringbuffer · 30 min lokalt': 'Ringbuffer · 30 min local',
+};
+
+function enify(str) {
+  if (typeof str !== 'string') return str;
+  let out = str;
+  // Longer keys first so peak rows replace before bare labels.
+  Object.keys(EN_TEXT)
+    .sort((a, b) => b.length - a.length)
+    .forEach((sv) => {
+      if (out.indexOf(sv) >= 0) out = out.split(sv).join(EN_TEXT[sv]);
+    });
+  return out;
+}
+
 for (const s of design.screens) {
   if (!s.kind) s.kind = 'gpu';
   if (!s.theme) s.theme = 'kingkong';
@@ -107,6 +133,14 @@ for (const s of design.screens) {
       c.opts.hideTabs = true;
       c.opts.app = 'Kingkong';
       c.opts.credit = 'Kingkong Tuning';
+    }
+    if (c.opts) {
+      ['label', 'text', 'rows', 'sub', 'foot', 'caption'].forEach((k) => {
+        if (typeof c.opts[k] === 'string') c.opts[k] = enify(c.opts[k]);
+      });
+      // Settings bar-end sliders: power ≤1500 hp, torque ≤1700 Nm (matches RANGES in main.js).
+      if (c.name === 'powerMax') c.opts.max = 1500;
+      if (c.name === 'torqueMax') c.opts.max = 1700;
     }
   }
 }
@@ -160,7 +194,7 @@ for (const p of stringFiles) {
 
 // ---- package metadata ----
 const DESC =
-  'Kingkong Quiet Dials 1.2.6: Trips/Details tabs hidden (flag). Engine, Fuel, Transmission, Adjust, Settings. Etanol, Skicka-logg.';
+  'Kingkong Quiet Dials 1.2.7: English-only UI. Power/Torque bar maxima 1500 hp / 1700 Nm. Trips/Details hidden. Ethanol, Send log.';
 const pkg = readJson(path.join(tree, 'package.json'));
 pkg.name = 'kingkong_cardata';
 pkg.version = version;
@@ -169,7 +203,7 @@ pkg.productName = 'Kingkong';
 pkg.author = 'Kingkong Tuning';
 pkg.store = {
   description:
-    'Kingkong Tuning Quiet Dials for BMW iDrive 8: Engine / Fuel / Transmission / Adjust / Settings. MHD Adjust, etanol, Skicka-logg. Black and gold. Tabs above ID8 chrome.',
+    'Kingkong Tuning Quiet Dials for BMW iDrive 8: Engine / Fuel / Transmission / Adjust / Settings. MHD Adjust, ethanol, Send log. Black and gold. English UI. Tabs above ID8 chrome.',
 };
 writeJson(path.join(tree, 'package.json'), pkg);
 writeJson(path.join(tree, 'npm-shrinkwrap.json'), {
@@ -271,8 +305,22 @@ const checkMain = fs.readFileSync(path.join(check, 'src', 'main.js'), 'utf8');
 if (!/SHOW_TRIPS_DETAILS\s*=\s*false/.test(checkMain) && !SHOW_TRIPS_DETAILS) {
   die('packed main.js missing SHOW_TRIPS_DETAILS = false');
 }
+if (!/power:\s*\[[^\]]*?1500/.test(checkMain) || !/torque:\s*\[[^\]]*?1700/.test(checkMain)) {
+  die('packed main.js missing power/torque RANGES maxima 1500/1700');
+}
+const screensBlob = JSON.stringify(checkScreens);
+if (/Effekt|Vridmoment|Etanol|Skicka-logg|väntar på DME|SUPPORTLOGG|lokalt/.test(screensBlob)) {
+  die('packed screens.json still has Swedish UI copy');
+}
+const settings = checkScreens.screens.find((s) => s.name === 'settings');
+const powerMax = (settings.components || []).find((c) => c.name === 'powerMax');
+const torqueMax = (settings.components || []).find((c) => c.name === 'torqueMax');
+if (!powerMax || powerMax.opts.max !== 1500) die('settings powerMax max != 1500');
+if (!torqueMax || torqueMax.opts.max !== 1700) die('settings torqueMax max != 1700');
+const checkEth = fs.readFileSync(path.join(check, 'src', 'ethanol.js'), 'utf8');
+if (!/return 'Ethanol'/.test(checkEth)) die('packed ethanol.js label not English');
 
 console.log(`packed ${outTgz}`);
 console.log(
-  `modules ${modules.length}; adjust RHMI 10000; tabs y=748; SHOW_TRIPS_DETAILS=${SHOW_TRIPS_DETAILS}`
+  `modules ${modules.length}; adjust RHMI 10000; tabs y=748; SHOW_TRIPS_DETAILS=${SHOW_TRIPS_DETAILS}; EN UI; power/torque max 1500/1700`
 );

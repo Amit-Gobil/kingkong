@@ -2,7 +2,7 @@
 /*
  * logbuf.js - local auto-log ring on the HU (support dump, not BM3/MHD).
  * Samples in memory + rolling segment files under data/logs/. Export packages the
- * last ~30 min (or size cap) for Skicka-logg. Node 8. No remote live stream.
+ * last ~30 min (or size cap) for Send log. Node 8. No remote live stream.
  */
 const fs = require('fs');
 const path = require('path');
@@ -168,7 +168,7 @@ RingLog.prototype.exportPackage = function (keepMs) {
         let body = parts.join('');
         if (!body && this.buf.length) body = this.buf.filter((x) => x.t >= cutoff).map((x) => x.line).join('');
         if (!body) {
-            this.lastStatus = 'Ingen logg att skicka ännu';
+            this.lastStatus = 'No log to send yet';
             return { ok: false, note: this.lastStatus };
         }
         // filter lines by t when possible
@@ -186,11 +186,11 @@ RingLog.prototype.exportPackage = function (keepMs) {
         // also write uncompressed sibling for USB copy without gunzip
         const plain = outPath.replace(/\.gz$/, '');
         fs.writeFileSync(plain, filtered);
-        this.lastStatus = `Sparad · ${path.basename(plain)} (${Math.round(gz.length / 1024)} KB gz)`;
+        this.lastStatus = `Saved · ${path.basename(plain)} (${Math.round(gz.length / 1024)} KB gz)`;
         prune(this.root, KEEP_MS, MAX_BYTES);
         return { ok: true, path: plain, gz: outPath, bytes: gz.length, note: this.lastStatus };
     } catch (e) {
-        this.lastStatus = `Export fel: ${e.message || e}`;
+        this.lastStatus = `Export error: ${e.message || e}`;
         return { ok: false, note: this.lastStatus };
     }
 };
@@ -201,7 +201,7 @@ RingLog.prototype.status = function () {
     return {
         segs: segs.length,
         mb: +(bytes / (1024 * 1024)).toFixed(2),
-        note: this.lastStatus || (segs.length ? `${segs.length} segment · ${+(bytes / 1024).toFixed(0)} KB` : 'Ringbuffer tom'),
+        note: this.lastStatus || (segs.length ? `${segs.length} segment · ${+(bytes / 1024).toFixed(0)} KB` : 'Ringbuffer empty'),
         incidentAt: this.incidentAt || null,
     };
 };

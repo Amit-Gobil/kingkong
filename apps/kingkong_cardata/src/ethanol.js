@@ -1,6 +1,6 @@
 'use strict';
 /*
- * ethanol.js — etanol % for Kingkong G81 + Motive ReFlex + MHD+.
+ * ethanol.js — ethanol % for Kingkong G81 + Motive ReFlex + MHD+.
  *
  * Amit MHD Monitor log: "Ethanol Content (Active) (%)" ≈ 78
  * (CALID 00008A51145047 / PRGID 00005C64145007). Active is MHD custom RAM;
@@ -9,7 +9,7 @@
  *   593A       — DME8FF oil+alcohol mass (debug only, not %)
  *   550D       — stock PROZENT_ALK_KRST
  *   OBD 01 52 / UDS F4 52 — aftermarket mirrors
- * UI always shows "Etanol XX %" or "Etanol -- %" (short label).
+ * UI always shows "Ethanol XX %" or "Ethanol -- %" (short label).
  */
 const CAN_IDS = [0x0EC, 0x0ED, 0x334, 0x4CB];
 const FRAC = 1 / 32768;
@@ -150,11 +150,11 @@ function value(state) {
 }
 
 /** Short UI label — never a long source string (that broke Fuel miniTile). */
-function label() { return 'Etanol'; }
+function label() { return 'Ethanol'; }
 
 function sourceLine(state) {
     if (!state) return 'no probe yet';
-    if (state.src && state.pct != null) return 'källa ' + state.src;
+    if (state.src && state.pct != null) return 'source ' + state.src;
     const d = state.debug || {};
     // show first non-default probe result for the strip
     const order = ['d5939', 'd5938', 'obd52', 'f452', 'd550D', 'd593A'];
@@ -162,13 +162,13 @@ function sourceLine(state) {
         const v = d[order[i]];
         if (v && v !== 'not asked') return order[i].replace(/^d/, '') + ': ' + v;
     }
-    return 'väntar på DME…';
+    return 'waiting for DME…';
 }
 
-/** "Etanol 78 %" or "Etanol -- %" */
+/** "Ethanol 78 %" or "Ethanol -- %" */
 function displayText(state) {
     const v = value(state);
-    return 'Etanol ' + (v == null ? '--' : String(v)) + ' %';
+    return 'Ethanol ' + (v == null ? '--' : String(v)) + ' %';
 }
 
 function debugRows(state) {
@@ -202,9 +202,9 @@ module.exports = {
         const raw = Math.round(0.78 * 32768);
         assert(fromUds5939([0x62, 0x59, 0x39, (raw >> 8) & 255, raw & 255], s));
         assert.strictEqual(s.pct, 78);
-        assert.strictEqual(label(), 'Etanol');
-        assert.strictEqual(displayText(s), 'Etanol 78 %');
-        assert(displayText(createEthanol()) === 'Etanol -- %');
+        assert.strictEqual(label(), 'Ethanol');
+        assert.strictEqual(displayText(s), 'Ethanol 78 %');
+        assert(displayText(createEthanol()) === 'Ethanol -- %');
         fromUds593A([0x62, 0x59, 0x3A, 0x01, 0x00], s);
         assert(s.debug.d593A.indexOf('oil') >= 0);
         assert.strictEqual(s.pct, 78); // 593A must not clear %

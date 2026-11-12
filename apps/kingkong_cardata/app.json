@@ -1,8 +1,8 @@
 {
   "id": "kingkong_cardata",
-  "version": "1.2.6",
+  "version": "1.2.7",
   "title": "Kingkong",
-  "description": "Kingkong Quiet Dials 1.2.6: Trips/Details tabs hidden (flag). Engine, Fuel, Transmission, Adjust, Settings. Etanol, Skicka-logg.",
+  "description": "Kingkong Quiet Dials 1.2.7: English-only UI. Power/Torque bar maxima 1500 hp / 1700 Nm. Trips/Details hidden. Ethanol, Send log.",
   "mguHmi": [
     "ID8"
   ],

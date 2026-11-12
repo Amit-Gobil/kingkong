@@ -497,7 +497,7 @@ function syncTabs() {          // bottom teleTabBar + shell (tabs hidden up top)
 const DATA_DIR = path.join(__dirname, '..', '..', 'data');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');   // the app's data folder (the Store's)
 const ring = new RingLog(DATA_DIR);
-const RANGES = { rpm: [8000, 5000, 10000, 500], boost: [2.5, 0.5, 4, 0.25], power: [500, 200, 1000, 50], torque: [700, 300, 1200, 50],
+const RANGES = { rpm: [8000, 5000, 10000, 500], boost: [2.5, 0.5, 4, 0.25], power: [500, 200, 1500, 50], torque: [700, 300, 1700, 50],
     oil: [150, 100, 180, 5], coolant: [130, 100, 160, 5], intake: [80, 40, 120, 5] };
 const UNITS = { rpm: 'rpm', boost: 'bar', power: 'hp', torque: 'Nm' };     // the bars with a red zone
 const snap = (k, v) => { const [def, lo, hi, st] = RANGES[k]; return isFinite(v) ? +Math.min(hi, Math.max(lo, Math.round(v / st) * st)).toFixed(2) : def; };
@@ -535,7 +535,7 @@ function peak(k, v) {
     if (v !== undefined && !(peaks[k] >= v)) peaks[k] = v;
     return peaks[k];
 }
-const LABEL = { rpm: ['RPM', 0], boost: ['Boost', 2], hp: ['Effekt', 0], nm: ['Vridmoment', 0] };
+const LABEL = { rpm: ['RPM', 0], boost: ['Boost', 2], hp: ['Power', 0], nm: ['Torque', 0] };
 const withPeak = (k) => (peaks[k] === undefined ? LABEL[k][0] : `${LABEL[k][0]} · peak ${peaks[k].toFixed(LABEL[k][1])}`);
 // "D3" in D with a known gear (the reference design), else the gear / selector as gearText gives it
 function gearShown() {
@@ -779,9 +779,9 @@ function render() {
         .set('peakKv', { rows: [
             ['RPM peak', peaks.rpm === undefined ? '--' : String(Math.round(peaks.rpm))],
             ['Boost peak', peaks.boost === undefined ? '--' : peaks.boost.toFixed(2)],
-            ['Effekt peak', peaks.hp === undefined ? '--' : String(Math.round(peaks.hp))],
-            ['Vridmoment peak', peaks.nm === undefined ? '--' : String(Math.round(peaks.nm))],
-            ['Etanol', ethMod.displayText(ethanol).replace(/^Etanol /, '') + (ethanol.src ? ` · ${ethanol.src}` : '')],
+            ['Power peak', peaks.hp === undefined ? '--' : String(Math.round(peaks.hp))],
+            ['Torque peak', peaks.nm === undefined ? '--' : String(Math.round(peaks.nm))],
+            ['Ethanol', ethMod.displayText(ethanol).replace(/^Ethanol /, '') + (ethanol.src ? ` · ${ethanol.src}` : '')],
         ] });
     // auto-log ring (always while polling window active)
     if (Date.now() <= activeUntil) {
@@ -896,7 +896,7 @@ function startScreens(rhmiApp, hosts) {
         if (e === 'currency') { currency = CURRENCIES[(CURRENCIES.indexOf(currency) + 1) % CURRENCIES.length]; saveSettings(); }
         if (e === 'sendLog') {
             const r = ring.exportPackage();
-            log(`skicka-logg: ${r.note}`);
+            log(`send-log: ${r.note}`);
             screens.set('logStatus', { text: r.note });
         }
         render();

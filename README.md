@@ -6,7 +6,7 @@ Package id: `kingkong_cardata`
 Look: black + gold + Kingkong Tuning logo  
 Tabs: **Engine** · **Fuel** · **Transmission** · **Adjust** · **Settings** (Trips/Details hidden via flag)
 
-Live values: RPM, boost, effekt, vridmoment, oil / coolant / intake temps, battery.
+Live values: RPM, boost, power, torque, oil / coolant / intake temps, battery. English-only UI.
 
 > Unofficial. Not affiliated with BMW AG. Use parked or on a closed track.
 
