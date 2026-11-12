@@ -54,17 +54,32 @@ if (pkgDir !== renamed) {
 }
 const tree = path.join(extract, `kingkong_cardata@${version}`);
 
-const TABS = 'Engine, Fuel, Trips, Transmission, Adjust, Details, Settings';
-const TAB_SEL = {
-  engine: 0,
-  fuel: 1,
-  trips: 2,
-  transmission: 3,
-  adjust: 4,
-  details: 5,
-  settings: 6,
-  dpf: 0,
-};
+// Flip to true to restore Trips / Details tabs. Keep in sync with apps/kingkong_cardata/src/main.js.
+const SHOW_TRIPS_DETAILS = false;
+const TABS = SHOW_TRIPS_DETAILS
+  ? 'Engine, Fuel, Trips, Transmission, Adjust, Details, Settings'
+  : 'Engine, Fuel, Transmission, Adjust, Settings';
+const TAB_SEL = SHOW_TRIPS_DETAILS
+  ? {
+      engine: 0,
+      fuel: 1,
+      trips: 2,
+      transmission: 3,
+      adjust: 4,
+      details: 5,
+      settings: 6,
+      dpf: 0,
+    }
+  : {
+      engine: 0,
+      fuel: 1,
+      trips: 0, // hidden: screens remain; sel unused in tab bar
+      transmission: 2,
+      adjust: 3,
+      details: 0,
+      settings: 4,
+      dpf: 0,
+    };
 
 // ---- screens.json: inject Adjust + refresh tab bars on every page ----
 const screensPath = path.join(tree, 'renderer', 'screens.json');
@@ -145,7 +160,7 @@ for (const p of stringFiles) {
 
 // ---- package metadata ----
 const DESC =
-  'Kingkong Quiet Dials 1.2.5: Adjust tab (maps 1–4, MHD Max Cooling, exhaust flap; Iterio Live Adjustments logic). Fuel etanol, Skicka-logg.';
+  'Kingkong Quiet Dials 1.2.6: Trips/Details tabs hidden (flag). Engine, Fuel, Transmission, Adjust, Settings. Etanol, Skicka-logg.';
 const pkg = readJson(path.join(tree, 'package.json'));
 pkg.name = 'kingkong_cardata';
 pkg.version = version;
@@ -154,7 +169,7 @@ pkg.productName = 'Kingkong';
 pkg.author = 'Kingkong Tuning';
 pkg.store = {
   description:
-    'Kingkong Tuning Quiet Dials for BMW iDrive 8: Adjust (MHD maps / Max Cooling / exhaust flap), etanol, Skicka-logg. Black and gold. Tabs above ID8 chrome.',
+    'Kingkong Tuning Quiet Dials for BMW iDrive 8: Engine / Fuel / Transmission / Adjust / Settings. MHD Adjust, etanol, Skicka-logg. Black and gold. Tabs above ID8 chrome.',
 };
 writeJson(path.join(tree, 'package.json'), pkg);
 writeJson(path.join(tree, 'npm-shrinkwrap.json'), {
@@ -248,8 +263,16 @@ if (!checkScreens.screens.some((s) => s.name === 'adjust')) die('packed screens.
 const adj = checkScreens.screens.find((s) => s.name === 'adjust');
 const tab = (adj.components || []).find((c) => c.gpu === 'teleTabBar');
 if (!tab || tab.y !== 748) die('adjust teleTabBar not at y=748');
+if (tab.opts.tabs !== TABS) die(`tab bar mismatch: ${tab.opts.tabs}`);
+if (!SHOW_TRIPS_DETAILS && /Trips|Details/.test(tab.opts.tabs)) die('Trips/Details still in tab bar');
 if (!fs.existsSync(path.join(check, 'src', 'adjust.js'))) die('outer src/adjust.js missing');
 if (!fs.existsSync(path.join(check, 'src', 'flap.js'))) die('outer src/flap.js missing');
+const checkMain = fs.readFileSync(path.join(check, 'src', 'main.js'), 'utf8');
+if (!/SHOW_TRIPS_DETAILS\s*=\s*false/.test(checkMain) && !SHOW_TRIPS_DETAILS) {
+  die('packed main.js missing SHOW_TRIPS_DETAILS = false');
+}
 
 console.log(`packed ${outTgz}`);
-console.log(`modules ${modules.length}; adjust RHMI 10000; tabs y=748`);
+console.log(
+  `modules ${modules.length}; adjust RHMI 10000; tabs y=748; SHOW_TRIPS_DETAILS=${SHOW_TRIPS_DETAILS}`
+);

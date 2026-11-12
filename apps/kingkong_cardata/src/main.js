@@ -471,8 +471,15 @@ const runtime = (f) => require(path.join(RENDERER, f));
 const PAGES = ['engine', 'fuel', 'trips', 'transmission', 'dpf', 'adjust', 'details', 'settings'];   // RHMI host states
 const TAB = { engine: 'Engine', fuel: 'Fuel', trips: 'Trips', transmission: 'Transmission', dpf: 'DPF',
     adjust: 'Adjust', details: 'Details', settings: 'Settings' };
-// Kingkong tabs: Engine / Fuel / Trips / Transmission / Adjust / Details / Settings
-const shownPages = () => ['engine', 'fuel', 'trips', 'transmission', 'adjust', 'details', 'settings'];
+// Flip to true to restore Trips / Details in the tab bar (screens + logic stay shipped either way).
+// Keep in sync with tools/pack-cardata.js SHOW_TRIPS_DETAILS.
+const SHOW_TRIPS_DETAILS = false;
+// Kingkong tabs: Engine / Fuel / [Trips] / Transmission / Adjust / [Details] / Settings
+const shownPages = () => ['engine', 'fuel']
+    .concat(SHOW_TRIPS_DETAILS ? ['trips'] : [])
+    .concat(['transmission', 'adjust'])
+    .concat(SHOW_TRIPS_DETAILS ? ['details'] : [])
+    .concat(['settings']);
 let screens = null, tabsShown = '';
 function syncTabs() {          // bottom teleTabBar + shell (tabs hidden up top)
     const s = shownPages(), t = s.map((p) => TAB[p]).join(', ');
