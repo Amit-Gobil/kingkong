@@ -163,9 +163,24 @@ if (!fs.existsSync(screensSrc)) die('renderer/screens.json missing');
 const rendererDir = path.join(pkgDir, 'renderer');
 fs.copyFileSync(screensSrc, path.join(rendererDir, 'screens.json'));
 
-// Drop race-only widgets file if present (not required)
+// Race skeleton injects require('./race-widgets') into tele-widgets.js. Cluster
+// screens do not use raceBrand/raceTree, so drop the file AND the require —
+// leaving the require with no file crashes GPU init on CID open (blank/no-open).
 const raceWidgets = path.join(rendererDir, 'race-widgets.js');
 if (fs.existsSync(raceWidgets)) fs.unlinkSync(raceWidgets);
+const telePath = path.join(rendererDir, 'tele-widgets.js');
+if (fs.existsSync(telePath)) {
+  let teleSrc = fs.readFileSync(telePath, 'utf8');
+  const raceHook =
+    /\nC\.tab = C\.tab \|\| C\.dim;\n\(function \(\) \{\n\s*const RW = require\('\.\/race-widgets'\);\n\s*Object\.assign\(DRAW, RW\.DRAW\);\n\s*Object\.assign\(TRY, RW\.TRY \|\| \{\}\);\n\}\)\(\);\n/;
+  if (raceHook.test(teleSrc)) {
+    teleSrc = teleSrc.replace(raceHook, '\n');
+    fs.writeFileSync(telePath, teleSrc);
+  }
+  if (teleSrc.includes("require('./race-widgets')") || teleSrc.includes('require("./race-widgets")')) {
+    die('tele-widgets.js still requires race-widgets — CID open would crash');
+  }
+}
 
 const screensDoc = readJson(path.join(rendererDir, 'screens.json'));
 for (const st of screensDoc.screens) {
@@ -181,7 +196,7 @@ if (!screensDoc.screens.some((s) => s.name === 'drag' && s.entry === true)) {
 if (!screensDoc.screens.some((s) => s.name === 'settings')) die('settings screen missing');
 
 const DESC =
-  'Kingkong Cluster 1.0.0: Quiet Dials black/gold KOMBI status strip via Cluster renderer (boost / power% / torque%). English. G81 M Mode yield. Requires Cluster renderer from Store.';
+  `Kingkong Cluster ${version}: Quiet Dials black/gold KOMBI status strip via Cluster renderer (boost / power% / torque%). English. G81 M Mode yield. Requires Cluster renderer from Store.`;
 
 const pkg = readJson(path.join(pkgDir, 'package.json'));
 pkg.name = 'kingkong_cluster';
@@ -236,13 +251,19 @@ const strayPkgSrc = path.join(pkgDir, 'src');
 if (fs.existsSync(strayPkgSrc)) execFileSync('rm', ['-rf', strayPkgSrc]);
 
 const outerSrc = path.join(extract, 'src');
+// Race tgz leaves race-only modules in outer src/; replace with Cluster's own set.
+if (fs.existsSync(outerSrc)) execFileSync('rm', ['-rf', outerSrc]);
 fs.mkdirSync(outerSrc, { recursive: true });
 for (const f of fs.readdirSync(repoSrc)) {
   const src = path.join(repoSrc, f);
   if (fs.statSync(src).isFile()) fs.copyFileSync(src, path.join(outerSrc, f));
 }
 
-for (const need of ['main.js', 'strip.js', 'cluster_render_client.js', 'online-host.js']) {
+const ALLOWED_SRC = new Set(['main.js', 'strip.js', 'cluster_render_client.js', 'online-host.js']);
+for (const f of fs.readdirSync(outerSrc)) {
+  if (!ALLOWED_SRC.has(f)) die(`unexpected src/${f} in cluster package (race leftover?)`);
+}
+for (const need of ALLOWED_SRC) {
   if (!fs.existsSync(path.join(outerSrc, need))) die(`src/${need} missing`);
 }
 if (!fs.readFileSync(path.join(outerSrc, 'cluster_render_client.js'), 'utf8').includes('MPL-2.0')) {
@@ -301,6 +322,17 @@ const checkScreens = readJson(
   path.join(check, `kingkong_cluster@${version}`, 'renderer', 'screens.json')
 );
 if (!checkScreens.screens.every((s) => s.kind === 'gpu')) die('screens missing kind:gpu');
+const checkTele = fs.readFileSync(
+  path.join(check, `kingkong_cluster@${version}`, 'renderer', 'tele-widgets.js'),
+  'utf8'
+);
+if (checkTele.includes('race-widgets')) die('packed tele-widgets still references race-widgets');
+if (fs.existsSync(path.join(check, `kingkong_cluster@${version}`, 'renderer', 'race-widgets.js'))) {
+  die('race-widgets.js should not ship in cluster');
+}
+for (const leak of ['qrcodegen.js', 'race.js', 'timer.js']) {
+  if (fs.existsSync(path.join(check, 'src', leak))) die(`race src leak: ${leak}`);
+}
 
 console.log(`packed ${outTgz}`);
 console.log(`appletId ${IDENTITY.appletId}; based on ${raceTgz}`);

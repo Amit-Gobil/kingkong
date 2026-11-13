@@ -31,6 +31,9 @@ node tools/pack-cluster.js
 
 RHMI identity: `rhmi-identity.json` (appletId **22975** — never reuse cardata 20973 / race 21974).
 
+## Launch fix (1.0.1)
+`1.0.0` could install a tile but fail to open: packing deleted `renderer/race-widgets.js` while the Race-based `tele-widgets.js` still `require('./race-widgets')`, so GPU init crashed on CID open. `pack-cluster.js` now strips that hook and refuses to ship the require.
+
 `tools/prebuilt.js` stays a no-op; Store installs the committed `.tgz`.
 
 ## License note
