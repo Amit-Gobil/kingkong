@@ -269,8 +269,15 @@ for (const need of ALLOWED_SRC) {
 if (!fs.readFileSync(path.join(outerSrc, 'cluster_render_client.js'), 'utf8').includes('MPL-2.0')) {
   die('cluster_render_client.js missing MPL-2.0 header');
 }
-if (!fs.readFileSync(path.join(outerSrc, 'main.js'), 'utf8').includes('ClusterRender')) {
+const mainSrc = fs.readFileSync(path.join(outerSrc, 'main.js'), 'utf8');
+if (!mainSrc.includes('ClusterRender')) {
   die('main.js missing ClusterRender');
+}
+if (!mainSrc.includes('MAX_IW') || !mainSrc.includes('paintStrip')) {
+  die('main.js must use strip-sized layers (MAX_IW + paintStrip) — full widget canvas is refused');
+}
+if (/iw:\s*size\[0\]/.test(mainSrc) || /ih:\s*size\[1\]/.test(mainSrc)) {
+  die('main.js must not pass full target size as image iw/ih');
 }
 
 // Collision guards

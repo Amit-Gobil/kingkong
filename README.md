@@ -24,8 +24,8 @@ You already need **[MGU Store](https://github.com/robertnisipeanu/mgu-store)** a
 
 ### Kingkong Cluster (KOMBI strip)
 1. Install Store tool **Cluster renderer** first (if missing).
-2. Install **Kingkong Cluster** `1.0.0` from this source/`main`.
-3. Open the app once; on the cluster **widget menu**, pick Kingkong Cluster.
+2. Install **Kingkong Cluster** `1.0.2` from this source/`main`.
+3. Open the app once; Status should show connected + a Layer ref; on the cluster **widget menu**, pick Kingkong Cluster.
 4. See `apps/kingkong_cluster/README.md` for limits (G81 M Mode yield, widget vs map).
 
 ### Requirements
