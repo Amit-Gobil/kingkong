@@ -98,7 +98,7 @@
           "w": 2400,
           "h": 60,
           "opts": {
-            "text": "Install Cluster renderer from Store first. On the cluster, open the widget menu and pick Kingkong Cluster.",
+            "text": "Needs Cluster renderer. Status must say connected + Layer ref. Then pick Kingkong in the cluster widget menu.",
             "size": 20,
             "align": "left",
             "color": "#7a7a7a"

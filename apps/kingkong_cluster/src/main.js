@@ -11,7 +11,11 @@ const path = require('path');
 const someipBuilders = require('oap-sdk/src/someip/someipBuilders');
 const { createHost } = require('./online-host.js');
 const { ClusterRender, DEFAULT_PATH } = require('./cluster_render_client.js');
-const { paintOnCanvas, paintStrip } = require('./strip.js');
+const { paintStrip } = require('./strip.js');
+
+/** cluster-render image buffers max 1920x720 (PROTOCOL + JS client). */
+const MAX_IW = 1920;
+const MAX_IH = 720;
 
 const LOG = '[kingkong_cluster]';
 const HOST_STATES = ['drag', 'race', 'online', 'settings'];
@@ -139,43 +143,54 @@ function parseTargets(helloTargets) {
 }
 
 function placeFor(target, tw, th) {
-  const stripW = target === 'map' ? Math.min(760, tw - 40) : 1140;
-  const stripH = target === 'map' ? 56 : 72;
-  // widget: lower-middle of the visible middle (mock). map: near bottom of map slot.
-  const x = Math.max(0, Math.floor((tw - stripW) / 2));
+  // Strip-sized layer (not full target canvas): iw/ih must be ≤1920x720.
+  // ID8 widget visible band ~x400–1720,y143–765; 1140@x550 is the documented sweet spot.
+  let stripW = target === 'map' ? Math.min(760, Math.max(120, tw - 40)) : 1140;
+  let stripH = target === 'map' ? 56 : 72;
+  stripW = Math.min(stripW, MAX_IW, tw);
+  stripH = Math.min(stripH, MAX_IH, th);
+  const x = Math.max(0, Math.min(tw - stripW, Math.floor((tw - stripW) / 2)));
   const y = target === 'map'
     ? Math.max(0, th - stripH - 36)
-    : Math.max(0, Math.floor(th * 0.52));
-  return { x, y, strip: { w: stripW, h: stripH } };
+    : Math.max(0, Math.min(th - stripH, Math.floor(th * 0.52)));
+  return { x, y, w: stripW, h: stripH };
 }
 
 function ensureLayer() {
   if (!cr || !cr.ready) return;
   const target = settings.target === 'map' ? 'map' : 'widget';
   const size = targetSizes[target] || (target === 'map' ? [874, 749] : [2240, 896]);
+  const place = placeFor(target, size[0], size[1]);
   if (layerRef) {
     try { cr.drop(layerRef); } catch (e) { /* */ }
     layerRef = 0;
   }
+  // Draw only the strip rect on the target — full widget/map canvases exceed image max.
   layerRef = cr.image({
     target,
     klass: 'overlay',
     z: 10,
-    x: 0,
-    y: 0,
-    w: size[0],
-    h: size[1],
-    iw: size[0],
-    ih: size[1],
+    x: place.x,
+    y: place.y,
+    w: place.w,
+    h: place.h,
+    iw: place.w,
+    ih: place.h,
     fps: STRIP_FPS,
-    sampling: 'bilinear',
+    sampling: 'nearest',
     visible: true,
     contend: 0, // do not fight stock HMI for the slot
     yield: 1,
     opacity: 1,
   });
   lastPaintKey = '';
-  layerText = `Layer: ref ${layerRef} → ${target} ${size[0]}x${size[1]}`;
+  if (!layerRef) {
+    layerText = `Layer: create refused (${place.w}x${place.h} on ${target} — check size ≤${MAX_IW}x${MAX_IH})`;
+    log(layerText);
+    renderUi();
+    return;
+  }
+  layerText = `Layer: ref ${layerRef} → ${target} @${place.x},${place.y} ${place.w}x${place.h}`;
   log(layerText);
   pushPixels(true);
 }
@@ -191,13 +206,16 @@ function pushPixels(force) {
 
   const target = settings.target === 'map' ? 'map' : 'widget';
   const size = targetSizes[target] || (target === 'map' ? [874, 749] : [2240, 896]);
+  const place = placeFor(target, size[0], size[1]);
   const vals = liveVals();
-  const key = [target, size[0], size[1], vals.boost, vals.power, vals.torque, wantShow].join('|');
+  const key = [target, place.x, place.y, place.w, place.h, vals.boost, vals.power, vals.torque, wantShow].join('|');
   if (!force && key === lastPaintKey) return;
   lastPaintKey = key;
 
-  const framed = paintOnCanvas(size[0], size[1], vals, placeFor(target, size[0], size[1]));
-  cr.pixels(layerRef, null, framed.rgba);
+  const strip = paintStrip(vals, { w: place.w, h: place.h });
+  if (!cr.pixels(layerRef, null, strip.rgba)) {
+    log('pixels rejected for layer ' + layerRef);
+  }
 }
 
 function startCluster() {
@@ -220,13 +238,26 @@ function startCluster() {
   });
   cr.on('layer', (ref, state, reason) => {
     if (ref !== layerRef) return;
-    layerText = `Layer: ${state}${reason ? ' · ' + reason : ''}`;
+    // ID8 widget: parked/waiting until picked in the cluster widget menu.
+    const tip = (state === 'waiting' || state === 'parked') && settings.target === 'widget'
+      ? ' · pick Kingkong in cluster widget menu'
+      : '';
+    layerText = `Layer: ${state}${reason ? ' · ' + reason : ''}${tip}`;
     // If parked / waiting behind stock, stay soft — no contend retries.
     renderUi();
   });
   cr.on('target', (name, state, holder, reason) => {
     if (name !== settings.target && name !== 'widget' && name !== 'map') return;
     log(`target ${name} ${state}${holder ? ' holder=' + holder : ''}${reason ? ' ' + reason : ''}`);
+    if (name === settings.target && (state === 'parked' || state === 'waiting')) {
+      layerText = settings.target === 'widget'
+        ? `Layer: ${state} — pick Kingkong Cluster in the cluster widget menu`
+        : `Layer: ${state}${reason ? ' · ' + reason : ''}`;
+      renderUi();
+    } else if (name === settings.target && state === 'shown' && layerRef) {
+      layerText = `Layer: shown on ${name}`;
+      renderUi();
+    }
   });
   cr.on('refused', (op, ref, reason) => {
     log(`refused ${op} ${ref}: ${reason}`);
@@ -298,8 +329,8 @@ function renderUi() {
     rows: [
       ['Target', settings.target],
       ['Tip', settings.target === 'widget'
-        ? 'Pick Kingkong Cluster in the cluster widget menu'
-        : 'Map slot — may sit under stock map content'],
+        ? 'Open cluster widget menu → pick Kingkong'
+        : 'Map slot — may sit under stock map / media'],
     ],
   });
   syncTabs();
